@@ -153,7 +153,7 @@ expensify/
 
 ## 📄 License
 
-MIT © 2024 Expensify
+SHIVANI © 2026 Expensify
 
 ---
 
