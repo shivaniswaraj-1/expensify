@@ -1,5 +1,4 @@
 const validator = require("validator");
-const nodemailer = require("nodemailer");
 const { v4: uuidv4 } = require("uuid");
 const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
@@ -7,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const ResetPassword = require("../models/resetPassword");
+const sendEmail = require("../utils/sendEmail"); // ✅ Resend helper (replaces nodemailer)
 let emailTemplate = require("../views/emailTemplate");
 
 const createUser = asyncHandler(async (req, res, next) => {
@@ -116,14 +116,13 @@ const refreshToken = asyncHandler(async (req, res, next) => {
     );
 
     res.json({
-      token: updatedToken
-    })
-
+      token: updatedToken,
+    });
   } catch (error) {
     res.status(500);
     throw new Error("Internal Server Error!");
   }
-})
+});
 
 const resetPassword = asyncHandler(async (req, res, next) => {
   const { email } = req.body;
@@ -132,6 +131,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
     res.status(400);
     throw new Error("Please provide an email!");
   }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -144,48 +144,35 @@ const resetPassword = asyncHandler(async (req, res, next) => {
         message: "User not found!",
       });
     }
-    await ResetPassword.deleteMany(
-      {
-        userId: user._id,
-      },
-      session
-    ); //delete all previous sessions/request of reset password
+
+    // Delete all previous reset password requests for this user
+    await ResetPassword.deleteMany({ userId: user._id }, session);
 
     const token = uuidv4();
     const url = `${process.env.FRONT_END_URL}`;
-    emailTemplate = emailTemplate.replace("{UUID_PLACEHOLDER}", token);
-    emailTemplate = emailTemplate.replace("{SERVER_ADDRESS_PLACEHOLDER}", url);
+
+    // Clone the template so the original is not modified on repeated calls
+    let emailContent = emailTemplate
+      .replace("{UUID_PLACEHOLDER}", token)
+      .replace("{SERVER_ADDRESS_PLACEHOLDER}", url);
 
     await ResetPassword.create(
-      [
-        {
-          token,
-          userId: user._id,
-        },
-      ],
+      [{ token, userId: user._id }],
       { session }
     );
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASS,
-      },
-    });
-
-    // Send the password reset email
-    await transporter.sendMail({
-      from: process.env.EMAIL,
-      to: req.body.email,
+    // ✅ Send email via Resend (replaces nodemailer transporter)
+    await sendEmail({
+      to: email,
       subject: "Reset Password for Expensify Account",
-      html: emailTemplate,
+      html: emailContent,
     });
 
     await session.commitTransaction();
     res.status(200).json({ success: true, message: "Email sent!" });
   } catch (error) {
     await session.abortTransaction();
+    console.error("Reset password error:", error);
     res.status(500);
     throw new Error("Internal Server Error!");
   } finally {
@@ -208,7 +195,7 @@ const validateToken = asyncHandler(async (req, res, next) => {
   const expiresInDate = new Date(result.expiresIn);
   const currentDate = new Date();
   if (expiresInDate < currentDate) {
-    await ResetPassword.deleteOne({ token }); //delete the expired token
+    await ResetPassword.deleteOne({ token }); // delete the expired token
     return res.status(400).send("Link expired, Please request a new One!");
   }
 
@@ -223,8 +210,8 @@ const changePassword = asyncHandler(async (req, res, next) => {
     res.status(400);
     throw new Error("Password is required!");
   }
-  const result = await ResetPassword.findOne({ token });
 
+  const result = await ResetPassword.findOne({ token });
   if (!result) {
     res.status(400);
     throw new Error("Invalid Session!");
@@ -238,7 +225,7 @@ const changePassword = asyncHandler(async (req, res, next) => {
   const expiresInDate = new Date(result.expiresIn);
   const currentDate = new Date();
   if (expiresInDate < currentDate) {
-    await ResetPassword.deleteOne({ token }); //delete the expired token
+    await ResetPassword.deleteOne({ token }); // delete the expired token
     res.status(400);
     throw new Error("Session Expired!");
   }
@@ -254,7 +241,7 @@ const changePassword = asyncHandler(async (req, res, next) => {
       { password: hashedPassword }
     ).session(session);
 
-    // Delete the token from the database to ensure that each link works only once
+    // Delete the token — each reset link works only once
     await ResetPassword.deleteOne({ token }).session(session);
 
     await session.commitTransaction();
@@ -278,5 +265,5 @@ module.exports = {
   resetPassword,
   validateToken,
   changePassword,
-  refreshToken
+  refreshToken,
 };

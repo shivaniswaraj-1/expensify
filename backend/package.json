@@ -23,6 +23,7 @@
     "mongoose": "^9.1.5",
     "nodemailer": "^6.9.14",
     "razorpay": "^2.9.2",
+    "resend": "^6.16.0",
     "uuid": "^9.0.1",
     "validator": "^13.11.0"
   },
