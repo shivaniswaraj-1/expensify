@@ -1,20 +1,28 @@
-const { Resend } = require("resend");
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+const nodemailer = require("nodemailer");
 
 const sendEmail = async ({ to, subject, html }) => {
-  const { data, error } = await resend.emails.send({
-    from: "Expensify <onboarding@resend.dev>",
+  // Creates a free test account automatically every time
+  const testAccount = await nodemailer.createTestAccount();
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.ethereal.email",
+    port: 587,
+    secure: false,
+    auth: {
+      user: testAccount.user,
+      pass: testAccount.pass,
+    },
+  });
+
+  const info = await transporter.sendMail({
+    from: '"Expensify" <noreply@expensify.com>',
     to,
     subject,
     html,
   });
 
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data;
+  // This prints the preview URL in your Vercel logs
+  console.log("📧 Email preview URL: " + nodemailer.getTestMessageUrl(info));
 };
 
 module.exports = sendEmail;
