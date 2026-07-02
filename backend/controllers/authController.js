@@ -146,7 +146,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
     }
 
     // Delete all previous reset password requests for this user
-    await ResetPassword.deleteMany({ userId: user._id }, session);
+    await ResetPassword.deleteMany({ userId: user._id }, { session });
 
     const token = uuidv4();
     const url = `${process.env.FRONT_END_URL}`;
