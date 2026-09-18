@@ -49,7 +49,7 @@ UserSchema.methods.generateAuthToken = function () {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "7d",
+      expiresIn: process.env.JWT_EXPIRY || "7d",
     }
   );
   return token;

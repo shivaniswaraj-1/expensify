@@ -33,6 +33,13 @@
 - 🏆 **Peak Spending** — Auto-detect highest spend period
 - 📋 **Detailed Table** — Every entry with share-of-total progress bars
 
+### Premium System (backend complete, UI in progress)
+- 💳 **Razorpay Payments** — Order creation + HMAC signature verification to upgrade an account
+- 🏅 **Leaderboard** — Ranks users by total spend via a MongoDB aggregation, with other users' emails hidden
+- 📤 **CSV Export** — Expense export uploaded to Cloudinary, with download history
+
+  These are fully implemented on the backend but not yet wired into the frontend UI — there's no in-app upgrade button or leaderboard page yet.
+
 ### Auth & Security
 - 🔐 **JWT Authentication** — Secure token-based sessions
 - 🔒 **Protected Routes** — Automatic redirect on session expiry
@@ -45,7 +52,7 @@
 - 💀 **Skeleton Loaders** — Polished loading states on every data fetch
 - 🎯 **Empty States** — Illustrated empty states with helpful CTAs
 - 🍞 **Toast Notifications** — Success / error feedback on every action
-- ⚡ **Optimistic UI** — Instant feedback via TanStack Query cache
+- ⚡ **Automatic Cache Refresh** — Mutations invalidate and refetch relevant data via TanStack Query
 
 ---
 

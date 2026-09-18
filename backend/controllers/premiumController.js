@@ -8,6 +8,7 @@ const Expense = require("../models/expense");
 const Download = require("../models/download");
 const uploadToCloudinary = require("../utils/upload");
 const moment = require("moment");
+const getPagination = require("../utils/pagination");
 
 const createOrder = asyncHandler(async (req, res, next) => {
   const instance = new Razorpay({
@@ -71,9 +72,7 @@ const verifyOrder = asyncHandler(async (req, res, next) => {
 
 const leaderboard = asyncHandler(async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const perPage = parseInt(req.query.rows) || 10;
-    const skip = (page - 1) * perPage;
+    const { page, perPage, skip } = getPagination(req);
 
     const totalItems = await User.countDocuments();
 
@@ -153,18 +152,34 @@ const getReport = asyncHandler(async (req, res, next) => {
     startDate.setFullYear(startDate.getFullYear() - 1);
   }
 
-  const docsToSelect = { createdAt: 1, description: 1, category: 1, amount: 1 };
+  // Weekly view is broken down by day, monthly by week, yearly by month.
+  const unitByType = { weekly: "day", monthly: "week", yearly: "month" };
+  const unit = unitByType[type];
+
+  const labelByType = {
+    weekly: (date) => moment(date).format("ddd, MMM D"),
+    monthly: (date) =>
+      `${moment(date).format("MMM D")} - ${moment(date).add(6, "days").format("MMM D")}`,
+    yearly: (date) => moment(date).format("MMM YYYY"),
+  };
 
   try {
-    const expenses = await Expense.find(
-      {
-        userId: req.user._id,
-        createdAt: { $gte: startDate },
-      },
-      docsToSelect
-    ).lean();
+    const dateTrunc = { date: "$createdAt", unit };
+    if (unit === "week") dateTrunc.startOfWeek = "monday";
 
-    res.status(200).json(expenses);
+    const buckets = await Expense.aggregate([
+      { $match: { userId: req.user._id, createdAt: { $gte: startDate } } },
+      { $group: { _id: { $dateTrunc: dateTrunc }, amount: { $sum: "$amount" } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const report = buckets.map((bucket) => ({
+      _id: bucket._id.toISOString(),
+      amount: bucket.amount,
+      label: labelByType[type](bucket._id),
+    }));
+
+    res.status(200).json(report);
   } catch (error) {
     res.status(500);
     throw new Error("Something went wrong!");

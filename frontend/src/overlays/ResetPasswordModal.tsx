@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import { AxiosError } from "axios";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import axiosInstance from "@/lib/axios";
@@ -11,10 +10,9 @@ const ResetPasswordModal = () => {
 
   const resetPassword = useMutation({
     mutationFn: (formData: Record<string, unknown>) => axiosInstance.post("/auth/token", formData),
-    onSuccess: () => { toast.success("Password reset email sent! Check your inbox."); onClose(); },
-    onError: (error: AxiosError) => {
-      const msg = error?.response?.status === 404 ? "No account found with that email." : "Something went wrong!";
-      toast.error(msg);
+    onSuccess: () => { toast.success("If that email is registered, a reset link has been sent."); onClose(); },
+    onError: () => {
+      toast.error("Something went wrong. Please try again.");
       onClose();
     },
     onSettled: () => resetPass.reset(),

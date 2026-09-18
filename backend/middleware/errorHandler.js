@@ -38,7 +38,15 @@ const errorhandler = (err, req, res, next) => {
       });
       break;
     default:
+      // Any status code not explicitly handled above (including the
+      // implicit default of 200 when a controller throws without first
+      // calling res.status(...)) still gets a real response instead of
+      // leaving the request hanging with nothing sent back.
       console.log(err);
+      res.status(500).json({
+        title: "Internal Server Error!",
+        message: err.message,
+      });
       break;
   }
 };

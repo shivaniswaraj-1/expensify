@@ -12,9 +12,11 @@ const verifyPremium = require("../middleware/premium");
 
 router.use(protected);
 
-// Razorpay / premium-only routes (kept for future use)
-router.route("/create-order").get(verifyPremium, createOrder);
-router.route("/verify-order").post(verifyPremium, verifyOrder);
+// Razorpay upgrade flow: a non-premium user must be able to reach these two
+// routes to become premium, so they require auth only, not verifyPremium.
+router.route("/create-order").get(createOrder);
+router.route("/verify-order").post(verifyOrder);
+
 router.route("/leaderboard").get(verifyPremium, leaderboard);
 
 // ✅ FIX 1: Report is now open to ALL users (verifyPremium removed)

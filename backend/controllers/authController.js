@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const ResetPassword = require("../models/resetPassword");
-const sendEmail = require("../utils/sendEmail"); // ✅ Resend helper (replaces nodemailer)
+const sendEmail = require("../utils/sendEmail"); // Nodemailer + Gmail SMTP helper
 let emailTemplate = require("../views/emailTemplate");
 
 const createUser = asyncHandler(async (req, res, next) => {
@@ -111,7 +111,7 @@ const refreshToken = asyncHandler(async (req, res, next) => {
       },
       process.env.JWT_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: process.env.JWT_EXPIRY || "7d",
       }
     );
 
@@ -132,19 +132,22 @@ const resetPassword = asyncHandler(async (req, res, next) => {
     throw new Error("Please provide an email!");
   }
 
+  // Always send back the same response whether or not the account exists,
+  // so this endpoint can't be used to discover which emails are registered.
+  const genericResponse = {
+    success: true,
+    message: "If that email is registered, a reset link has been sent.",
+  };
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(200).json(genericResponse);
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found!",
-      });
-    }
-
     // Delete all previous reset password requests for this user
     await ResetPassword.deleteMany({ userId: user._id }, { session });
 
@@ -161,7 +164,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
       { session }
     );
 
-    // ✅ Send email via Resend (replaces nodemailer transporter)
+    // Send the reset-password email via Nodemailer (Gmail SMTP)
     await sendEmail({
       to: email,
       subject: "Reset Password for Expensify Account",
@@ -169,7 +172,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
     });
 
     await session.commitTransaction();
-    res.status(200).json({ success: true, message: "Email sent!" });
+    res.status(200).json(genericResponse);
   } catch (error) {
     await session.abortTransaction();
     console.error("Reset password error:", error);
@@ -203,7 +206,7 @@ const validateToken = asyncHandler(async (req, res, next) => {
 });
 
 const changePassword = asyncHandler(async (req, res, next) => {
-  const token = req.params.token || req.body.token; // accept token from URL param (PUT) OR body (POST)
+  const token = req.body.token;
   const { password } = req.body;
 
   if (!password) {

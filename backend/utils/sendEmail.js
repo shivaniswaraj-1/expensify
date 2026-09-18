@@ -5,7 +5,7 @@ const nodemailer = require("nodemailer");
 if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
   console.error(
     "❌ EMAIL_USER / EMAIL_PASS are not set. Password reset emails will fail. " +
-      "Set them in your .env locally and in your Vercel Project → Settings → Environment Variables."
+      "Set them in your .env locally and in your Render/Railway dashboard's Environment Variables."
   );
 }
 

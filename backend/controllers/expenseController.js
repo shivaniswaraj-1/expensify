@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
 const Expense = require("../models/expense");
 const User = require("../models/user");
+const getPagination = require("../utils/pagination");
 
 const addExpense = asyncHandler(async (req, res, next) => {
   const { amount, category, description } = req.body;
@@ -41,7 +42,7 @@ const addExpense = asyncHandler(async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      messsage: "Expense created Successfully!",
+      message: "Expense created Successfully!",
     });
   } catch (error) {
     await session.abortTransaction();
@@ -53,18 +54,30 @@ const addExpense = asyncHandler(async (req, res, next) => {
 });
 
 const getUserExpenses = asyncHandler(async (req, res, next) => {
-  const page = parseInt(req.query.page) || 1;
-  const perPage = parseInt(req.query.rows) || 10;
+  const { page, perPage, skip } = getPagination(req);
+  const search = (req.query.search || "").trim();
+  const category = req.query.category || "";
+  const sortDir = req.query.sortDir === "asc" ? 1 : -1;
 
-  const skip = (page - 1) * perPage;
+  // Search/filter/sort are applied here, before pagination, so results are
+  // correct across the user's whole history instead of only the loaded page.
+  const filter = { userId: req.user._id };
+  if (category) {
+    filter.category = category;
+  }
+  if (search) {
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const searchRegex = new RegExp(escaped, "i");
+    filter.$or = [{ description: searchRegex }, { category: searchRegex }];
+  }
 
   try {
-    const count = await Expense.countDocuments({ userId: req.user._id });
-    const expenses = await Expense.find({ userId: req.user._id })
+    const count = await Expense.countDocuments(filter);
+    const expenses = await Expense.find(filter)
       .select({ userId: 0 })
+      .sort({ amount: sortDir, createdAt: -1 })
       .limit(perPage)
-      .skip(skip)
-      .sort({ createdAt: -1 });
+      .skip(skip);
 
     const totalPages = Math.ceil(count / perPage);
 

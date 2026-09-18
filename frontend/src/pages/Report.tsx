@@ -8,21 +8,10 @@ import {
 } from "recharts";
 import axiosInstance from "@/lib/axios";
 import { Loading } from "@/components/Loading";
+import { ChartTooltip } from "@/components/ChartTooltip";
 import { ReportData, ReportType } from "@/types/report";
 
 const BAR_COLORS = ["#6366f1","#10b981","#f59e0b","#ef4444","#06b6d4","#a855f7","#ec4899","#14b8a6"];
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: ".65rem .9rem", boxShadow: "var(--shadow-md)" }}>
-      <p style={{ fontSize: ".72rem", fontWeight: 700, color: "var(--text-3)", margin: "0 0 .25rem", textTransform: "uppercase", letterSpacing: ".05em" }}>{label}</p>
-      <p style={{ fontSize: ".95rem", fontWeight: 700, color: "var(--text)", margin: 0, fontFamily: "'DM Mono', monospace" }}>
-        ₹{Number(payload[0].value).toLocaleString()}
-      </p>
-    </div>
-  );
-};
 
 const Report = () => {
   useTitle("Expensify — Analytics");
@@ -167,7 +156,7 @@ const Report = () => {
                       tickLine={false}
                       axisLine={false}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<ChartTooltip labelFontSize=".72rem" />} />
                     <Bar dataKey="amount" radius={[6, 6, 0, 0]} maxBarSize={40}>
                       {chartData.map((_, i) => (
                         <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} fillOpacity={0.9} />
@@ -198,7 +187,7 @@ const Report = () => {
                       tickLine={false}
                       axisLine={false}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<ChartTooltip labelFontSize=".72rem" />} />
                     <Legend wrapperStyle={{ fontSize: ".72rem" }} />
                     <Line
                       type="monotone"

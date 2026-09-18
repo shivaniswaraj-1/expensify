@@ -20,6 +20,7 @@ const useDeleteExpense = () => {
             queryClient.invalidateQueries({
                 queryKey: ["user-expenses", { currentPage, rows }],
             });
+            queryClient.invalidateQueries({ queryKey: ["all-expenses-stats"] });
             toast.info("Expense Deleted!", { autoClose: 2000 });
         },
         onSettled: () => onClose(),

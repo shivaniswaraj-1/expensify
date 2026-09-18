@@ -1,17 +1,10 @@
-type LeaderboardData = {
-    name: string;
-    totalExpenses: number;
-    email?: string
-};
-
-
 type Expense = {
     _id: string;
     amount: number;
     category: string;
-    createdAt: Date;
+    createdAt: string;
     description: string;
-    updatedAt: Date;
+    updatedAt: string;
 };
 
 type DashboardData = {

@@ -16,7 +16,6 @@ app.use(
       "http://localhost:5173",
       "https://expensify-xi.vercel.app",
     ],
-    credentials: true,
   })
 );
 

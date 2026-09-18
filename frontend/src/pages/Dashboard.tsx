@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useTitle } from "react-use";
+import { useTitle, useDebounce } from "react-use";
 import moment from "moment";
 import CountUp from "react-countup";
 import { toast } from "react-toastify";
@@ -14,6 +14,8 @@ import axiosInstance from "@/lib/axios";
 import EditExpenseDialog from "@/overlays/EditExpenseDialog";
 import DeleteDialog from "@/overlays/DeleteDialog";
 import useOverlayStore from "@/hooks/useOverlayStore";
+import { ChartTooltip } from "@/components/ChartTooltip";
+import { BudgetSection } from "@/components/BudgetSection";
 
 // ── Constants ──────────────────────────────────────────────────
 const CATEGORIES = [
@@ -43,96 +45,6 @@ const CAT_ICONS: Record<string, string> = {
 
 const PIE_FALLBACK = ["#6366f1","#06b6d4","#10b981","#f59e0b","#ef4444","#ec4899","#8b5cf6","#14b8a6","#f97316","#a855f7","#3b82f6","#84cc16"];
 
-// ── Custom Tooltip ──────────────────────────────────────────────
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 10, padding: ".65rem .9rem", boxShadow: "var(--shadow-md)" }}>
-      <p style={{ fontSize: ".75rem", fontWeight: 700, color: "var(--text-3)", margin: "0 0 .25rem", textTransform: "uppercase", letterSpacing: ".05em" }}>{label}</p>
-      <p style={{ fontSize: ".95rem", fontWeight: 700, color: "var(--text)", margin: 0, fontFamily: "'DM Mono', monospace" }}>
-        ₹{Number(payload[0].value).toLocaleString()}
-      </p>
-    </div>
-  );
-};
-
-// ── Budget Section ──────────────────────────────────────────────
-const BudgetSection = ({ totalExpense }: { totalExpense: number }) => {
-  const [budget, setBudget] = useState(() => Number(localStorage.getItem("monthly_budget") ?? "0"));
-  const [editing, setEditing] = useState(false);
-  const [input, setInput] = useState(budget.toString());
-
-  const pct = budget > 0 ? Math.min(100, Math.round((totalExpense / budget) * 100)) : 0;
-  const overBudget = budget > 0 && totalExpense > budget;
-  const barColor = overBudget ? "#ef4444" : pct > 80 ? "#f59e0b" : "#10b981";
-
-  const save = () => {
-    const val = Math.max(0, Number(input) || 0);
-    setBudget(val);
-    localStorage.setItem("monthly_budget", val.toString());
-    setEditing(false);
-    if (val > 0 && totalExpense > val) toast.warn("You're over budget this month!", { autoClose: 4000 });
-  };
-
-  return (
-    <div className="stat-card h-100">
-      <div className="d-flex align-items-start justify-content-between mb-3">
-        <div style={{ flex: 1 }}>
-          <div className="stat-label">Monthly Budget</div>
-          {budget > 0 ? (
-            <div className="stat-value sm mono">₹{budget.toLocaleString()}</div>
-          ) : (
-            <div style={{ color: "var(--text-3)", fontSize: ".85rem", marginTop: ".25rem", fontWeight: 500 }}>Not configured</div>
-          )}
-        </div>
-        <div className="stat-icon" style={{ background: "rgba(99,102,241,.08)", color: "var(--primary)" }}>
-          <i className="bi bi-bullseye" />
-        </div>
-      </div>
-
-      {budget > 0 && (
-        <>
-          <div className="budget-track mb-2">
-            <div className="budget-fill" style={{ width: `${pct}%`, background: barColor }} />
-          </div>
-          <div className="d-flex justify-content-between" style={{ fontSize: ".72rem", color: "var(--text-3)" }}>
-            <span>{pct}% used</span>
-            {overBudget
-              ? <span style={{ color: "var(--danger)", fontWeight: 700 }}>Over ₹{(totalExpense - budget).toLocaleString()}</span>
-              : <span style={{ color: "var(--accent)", fontWeight: 600 }}>₹{(budget - totalExpense).toLocaleString()} left</span>
-            }
-          </div>
-        </>
-      )}
-
-      {editing ? (
-        <div className="d-flex gap-2 mt-3">
-          <input
-            className="form-control form-control-sm"
-            type="number"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="e.g. 30000"
-            autoFocus
-            onKeyDown={(e) => e.key === "Enter" && save()}
-          />
-          <button className="btn btn-primary btn-sm" onClick={save} style={{ whiteSpace: "nowrap", padding: "0 .75rem" }}>Save</button>
-          <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setEditing(false)}>✕</button>
-        </div>
-      ) : (
-        <button
-          className="btn btn-ghost w-100 mt-3"
-          style={{ fontSize: ".78rem", justifyContent: "center" }}
-          onClick={() => { setInput(budget.toString()); setEditing(true); }}
-        >
-          <i className="bi bi-pencil me-1" />
-          {budget > 0 ? "Edit Budget" : "Set Budget"}
-        </button>
-      )}
-    </div>
-  );
-};
-
 // ── Main Dashboard ──────────────────────────────────────────────
 const Dashboard = () => {
   useTitle("Expensify — Dashboard");
@@ -142,16 +54,53 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") ?? "1");
   const [rows, setRows] = useState<number>(() => JSON.parse(localStorage.getItem("rows") ?? "10"));
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const { register, handleSubmit, reset } = useForm();
 
-  // Paginated data for table
+  // Debounce the search box so we don't hit the API on every keystroke, and
+  // send the user back to page 1 once a new search actually takes effect
+  // (skipping that reset on first mount, e.g. when deep-linking to a page).
+  const isFirstSearchRun = useRef(true);
+  useDebounce(
+    () => {
+      setSearch(searchInput);
+      if (isFirstSearchRun.current) {
+        isFirstSearchRun.current = false;
+        return;
+      }
+      if (currentPage !== 1) navigate("/dashboard?page=1");
+    },
+    400,
+    [searchInput]
+  );
+
+  const goToFirstPage = () => {
+    if (currentPage !== 1) navigate("/dashboard?page=1");
+  };
+
+  const toggleSortDir = () => {
+    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    goToFirstPage();
+  };
+
+  // Paginated data for table — search/category/sort are applied on the
+  // backend, before pagination, so results are correct across every page,
+  // not just the currently loaded one.
   const { isPending, data } = useQuery({
-    queryKey: ["user-expenses", { currentPage, rows }],
+    queryKey: ["user-expenses", { currentPage, rows, search, filterCat, sortDir }],
     queryFn: async () => {
-      const res = await axiosInstance.get(`/expense/?page=${currentPage}&rows=${rows}`);
+      const params = new URLSearchParams({
+        page: String(currentPage),
+        rows: String(rows),
+        sortDir,
+      });
+      if (search) params.set("search", search);
+      if (filterCat) params.set("category", filterCat);
+
+      const res = await axiosInstance.get(`/expense/?${params.toString()}`);
       const d = res.data as DashboardData;
       navigate(`/dashboard?page=${d.currentPage}`, { replace: true });
       return d;
@@ -212,17 +161,8 @@ const Dashboard = () => {
       .map(([name, amount]) => ({ name, amount }));
   }, [allExpenses]);
 
-  // Filter/sort
-  const filtered = useMemo(() => {
-    let list = [...(data?.expenses ?? [])];
-    if (search) list = list.filter((e) =>
-      e.description.toLowerCase().includes(search.toLowerCase()) ||
-      e.category.toLowerCase().includes(search.toLowerCase())
-    );
-    if (filterCat) list = list.filter((e) => e.category === filterCat);
-    list.sort((a, b) => sortDir === "asc" ? a.amount - b.amount : b.amount - a.amount);
-    return list;
-  }, [data?.expenses, search, filterCat, sortDir]);
+  // The backend already returns this page pre-filtered and pre-sorted.
+  const expenses = data?.expenses ?? [];
 
   const createExpense = useMutation({
     mutationFn: (formData: Record<string, unknown>) => axiosInstance.post("/expense", formData),
@@ -424,7 +364,7 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                   <YAxis tickFormatter={(v) => `₹${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<ChartTooltip />} />
                   <Area
                     type="monotone"
                     dataKey="amount"
@@ -521,8 +461,8 @@ const Dashboard = () => {
             <input
               className="form-control"
               placeholder="Search expenses..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
 
@@ -530,7 +470,7 @@ const Dashboard = () => {
             className="form-select"
             style={{ width: "auto", minWidth: 160 }}
             value={filterCat}
-            onChange={(e) => setFilterCat(e.target.value)}
+            onChange={(e) => { setFilterCat(e.target.value); goToFirstPage(); }}
           >
             <option value="">All Categories</option>
             {CATEGORIES.map((c) => (
@@ -540,7 +480,7 @@ const Dashboard = () => {
 
           <button
             className="btn btn-ghost btn-sm"
-            onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+            onClick={toggleSortDir}
           >
             <i className={`bi bi-sort-numeric-${sortDir === "asc" ? "up" : "down"}`} />
             Amount
@@ -549,7 +489,7 @@ const Dashboard = () => {
           <div style={{ marginLeft: "auto", fontSize: ".75rem", color: "var(--text-3)" }}>
             {data && (
               <span>
-                {filtered.length} {filtered.length === 1 ? "result" : "results"}
+                {data.totalItems} {data.totalItems === 1 ? "result" : "results"}
               </span>
             )}
           </div>
@@ -569,14 +509,14 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : expenses.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">
               <i className="bi bi-receipt" />
             </div>
             <h6>No expenses found</h6>
             <p>
-              {search || filterCat
+              {searchInput || filterCat
                 ? "Try adjusting your search or filters."
                 : "Add your first expense using the form above."}
             </p>
@@ -590,14 +530,14 @@ const Dashboard = () => {
                   <th>Date</th>
                   <th>Category</th>
                   <th className="table-col-hide-mobile">Description</th>
-                  <th className="sortable" onClick={() => setSortDir((d) => d === "asc" ? "desc" : "asc")}>
+                  <th className="sortable" onClick={toggleSortDir}>
                     Amount <i className={`bi bi-chevron-${sortDir === "asc" ? "up" : "down"}`} style={{ fontSize: ".65rem" }} />
                   </th>
                   <th className="text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((exp, i) => (
+                {expenses.map((exp, i) => (
                   <tr key={exp._id}>
                     <td style={{ color: "var(--text-4)", fontSize: ".75rem", fontFamily: "'DM Mono', monospace" }}>
                       {(currentPage - 1) * rows + i + 1}
