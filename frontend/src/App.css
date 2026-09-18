@@ -443,9 +443,10 @@ body {
   vertical-align: middle;
   border-bottom: 1px solid var(--divider);
   color: var(--text-2);
+  background: var(--bg-card);
+  transition: background var(--transition);
 }
-.table-wrap tbody tr { transition: background var(--transition); }
-.table-wrap tbody tr:hover { background: var(--surface); }
+.table-wrap tbody tr:hover td { background: var(--surface); }
 .table-wrap tbody tr:last-child td { border-bottom: none; }
 
 .table-footer {
@@ -882,6 +883,19 @@ body {
   line-height: 1.7;
 }
 
+.landing-hero-image {
+  max-width: 320px;
+  margin: 0 auto 2.5rem;
+  padding: 1.5rem;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08);
+}
+.landing-hero-image img {
+  width: 100%;
+  display: block;
+}
+
 .landing-cta { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 .btn-landing-primary {
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
@@ -959,7 +973,60 @@ body {
 [data-theme="dark"] .table-toolbar,
 [data-theme="dark"] .table-footer,
 [data-theme="dark"] .table-wrap thead th { background: var(--surface); }
-[data-theme="dark"] .table-wrap tbody tr:hover { background: var(--surface); }
+[data-theme="dark"] .table-wrap tbody tr:hover td { background: var(--surface); }
+
+/* ════════════════════════════════════════════════════════════
+   PREMIUM VISUAL POLISH
+   Signature gradient accent + glow icons + depth + micro-motion
+════════════════════════════════════════════════════════════ */
+
+/* Signature top accent — the sidebar already does this; repeating it
+   across every card type ties the whole app to one visual identity. */
+.stat-card, .chart-card, .form-card, .table-wrap { position: relative; }
+.stat-card::before, .chart-card::before, .form-card::before, .table-wrap::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+
+/* Gradient + glow icon variants (used with the existing .stat-icon box) */
+.stat-icon-primary { background: linear-gradient(135deg, rgba(79,70,229,.18), rgba(79,70,229,.05)); color: var(--primary); box-shadow: 0 0 0 1px rgba(79,70,229,.08), 0 6px 16px -4px rgba(79,70,229,.35); }
+.stat-icon-accent  { background: linear-gradient(135deg, rgba(16,185,129,.18), rgba(16,185,129,.05)); color: var(--accent); box-shadow: 0 0 0 1px rgba(16,185,129,.08), 0 6px 16px -4px rgba(16,185,129,.35); }
+.stat-icon-warning { background: linear-gradient(135deg, rgba(245,158,11,.2), rgba(245,158,11,.05)); color: var(--warning); box-shadow: 0 0 0 1px rgba(245,158,11,.08), 0 6px 16px -4px rgba(245,158,11,.35); }
+.stat-icon-danger  { background: linear-gradient(135deg, rgba(239,68,68,.2), rgba(239,68,68,.05)); color: var(--danger); box-shadow: 0 0 0 1px rgba(239,68,68,.08), 0 6px 16px -4px rgba(239,68,68,.35); }
+
+/* Sidebar active tab — a left accent bar instead of just a background tint */
+.sidebar-nav .nav-link.active::before {
+  content: '';
+  position: absolute;
+  left: -6px; top: 22%; bottom: 22%;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--primary), var(--accent));
+}
+
+/* Subtle depth wash behind the page content — not a flat page background */
+.page-content { position: relative; z-index: 0; }
+.page-content::before {
+  content: '';
+  position: absolute;
+  top: -1.75rem; left: -2rem; right: -2rem;
+  height: 280px;
+  background: radial-gradient(ellipse 900px 280px at 25% -20%, rgba(79,70,229,.07), transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+[data-theme="dark"] .page-content::before {
+  background: radial-gradient(ellipse 900px 280px at 25% -20%, rgba(79,70,229,.12), transparent 70%);
+}
+
+/* Gentle entrance motion on first paint (plays once per mount, not on data refresh) */
+.stat-card, .chart-card, .form-card {
+  animation: slideUp .4s cubic-bezier(.16,1,.3,1) both;
+}
 
 /* ════════════════════════════════
    RESPONSIVE
@@ -1160,6 +1227,7 @@ body {
   .landing-hero { padding: 4rem 1rem 3rem; }
   .landing-h1 { font-size: 2rem; }
   .landing-desc { font-size: .9rem; }
+  .landing-hero-image { max-width: 260px; padding: 1rem; margin-bottom: 1.75rem; }
   .landing-cta { flex-direction: column; align-items: center; }
   .btn-landing-primary,
   .btn-landing-outline { width: 100%; max-width: 280px; justify-content: center; }

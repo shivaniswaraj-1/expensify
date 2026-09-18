@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTitle } from "react-use";
+import heroImage from "@/assets/Hero-image.webp";
 
 const FEATURES = [
   {
@@ -80,6 +81,11 @@ const Root = () => {
         <p className="landing-desc">
           Track expenses, set budgets, and visualize your spending patterns — all in one clean, fast dashboard.
         </p>
+
+        <div className="landing-hero-image">
+          <img src={heroImage} alt="Illustration of someone overwhelmed by bills, receipts, and spending" />
+        </div>
+
         <div className="landing-cta">
           <Link to="/auth?action=signup" className="btn-landing-primary">
             <i className="bi bi-rocket-takeoff" />

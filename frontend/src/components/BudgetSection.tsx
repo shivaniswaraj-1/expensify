@@ -33,7 +33,7 @@ export const BudgetSection = ({ totalExpense }: BudgetSectionProps) => {
             <div style={{ color: "var(--text-3)", fontSize: ".85rem", marginTop: ".25rem", fontWeight: 500 }}>Not configured</div>
           )}
         </div>
-        <div className="stat-icon" style={{ background: "rgba(99,102,241,.08)", color: "var(--primary)" }}>
+        <div className="stat-icon stat-icon-primary">
           <i className="bi bi-bullseye" />
         </div>
       </div>

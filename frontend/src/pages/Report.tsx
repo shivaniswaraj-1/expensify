@@ -80,7 +80,7 @@ const Report = () => {
                 <div className="stat-value mono">₹{totalAmount.toLocaleString()}</div>
                 <div className="stat-sub">{type} total</div>
               </div>
-              <div className="stat-icon" style={{ background: "rgba(79,70,229,.08)", color: "var(--primary)" }}>
+              <div className="stat-icon stat-icon-primary">
                 <i className="bi bi-wallet2" />
               </div>
             </div>
@@ -94,7 +94,7 @@ const Report = () => {
                 <div className="stat-value mono">₹{avgAmount.toLocaleString()}</div>
                 <div className="stat-sub">{data?.length ?? 0} entries</div>
               </div>
-              <div className="stat-icon" style={{ background: "rgba(16,185,129,.08)", color: "var(--accent)" }}>
+              <div className="stat-icon stat-icon-accent">
                 <i className="bi bi-bar-chart-fill" />
               </div>
             </div>
@@ -115,7 +115,7 @@ const Report = () => {
                   </div>
                 )}
               </div>
-              <div className="stat-icon" style={{ background: "rgba(245,158,11,.08)", color: "var(--warning)" }}>
+              <div className="stat-icon stat-icon-warning">
                 <i className="bi bi-fire" />
               </div>
             </div>

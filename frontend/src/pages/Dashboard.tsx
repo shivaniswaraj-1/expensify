@@ -210,7 +210,7 @@ const Dashboard = () => {
                   {allExpenses.length} transactions
                 </div>
               </div>
-              <div className="stat-icon" style={{ background: "rgba(79,70,229,.08)", color: "var(--primary)" }}>
+              <div className="stat-icon stat-icon-primary">
                 <i className="bi bi-wallet2" />
               </div>
             </div>
@@ -235,7 +235,7 @@ const Dashboard = () => {
                   {monthChange === 0 && <span>{thisMonthCount} transactions</span>}
                 </div>
               </div>
-              <div className="stat-icon" style={{ background: "rgba(16,185,129,.08)", color: "var(--accent)" }}>
+              <div className="stat-icon stat-icon-accent">
                 <i className="bi bi-calendar-check" />
               </div>
             </div>
@@ -266,7 +266,7 @@ const Dashboard = () => {
                 </div>
                 <div className="stat-sub">Highest spend area</div>
               </div>
-              <div className="stat-icon" style={{ background: "rgba(245,158,11,.08)", color: "var(--warning)" }}>
+              <div className="stat-icon stat-icon-warning">
                 <i className="bi bi-fire" />
               </div>
             </div>
@@ -317,6 +317,12 @@ const Dashboard = () => {
                       />
                     ))}
                   </Pie>
+                  <text x="50%" y="46%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 10, fontWeight: 700, fill: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                    Total
+                  </text>
+                  <text x="50%" y="57%" textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 15, fontWeight: 800, fill: "var(--text)", fontFamily: "'DM Mono', monospace" }}>
+                    ₹{totalExpense >= 100000 ? `${(totalExpense / 100000).toFixed(1)}L` : totalExpense.toLocaleString()}
+                  </text>
                   <Tooltip
                     content={({ active, payload }) => {
                       if (!active || !payload?.length) return null;
