@@ -33,7 +33,7 @@ const Sidebar = ({ show, onClose }: SidebarProps) => {
             <i className="bi bi-wallet2" />
           </div>
           <div className="sidebar-brand-text">
-            <div className="sidebar-brand-name">Expensify</div>
+            <div className="sidebar-brand-name">SpendWise</div>
             <div className="sidebar-brand-sub">Finance Tracker</div>
           </div>
         </div>

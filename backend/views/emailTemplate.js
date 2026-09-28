@@ -66,7 +66,7 @@ const emailTemplate = `
                       "
                     >
                       Someone recently requested a password change for your
-                      Expensify account. If this was you, you can set a new
+                      SpendWise account. If this was you, you can set a new
                       password here:
                     </p>
                     <a

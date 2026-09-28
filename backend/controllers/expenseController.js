@@ -6,10 +6,6 @@ const getPagination = require("../utils/pagination");
 
 const addExpense = asyncHandler(async (req, res, next) => {
   const { amount, category, description } = req.body;
-  if (!amount || !category || !description) {
-    res.status(400);
-    throw new Error("All fields are Mandatory!");
-  }
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -140,11 +136,6 @@ const updateUserExpense = asyncHandler(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(expenseId)) {
     res.status(400);
     throw new Error("Invalid Expense Id!");
-  }
-
-  if (!amount || !category || !description) {
-    res.status(400);
-    throw new Error("All fields are Mandatory!");
   }
 
   const session = await mongoose.startSession();

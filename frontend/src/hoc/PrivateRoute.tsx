@@ -22,7 +22,7 @@ export const PrivateRoute = ({
     "/dashboard": { title: "Dashboard", sub: "Overview of your finances" },
     "/reports": { title: "Analytics", sub: "Detailed spending insights" },
   };
-  const meta = pageMeta[location.pathname] ?? { title: "Expensify", sub: "" };
+  const meta = pageMeta[location.pathname] ?? { title: "SpendWise", sub: "" };
 
   if (isInitializing) return <Loading />;
   if (!user) return <Navigate to="/auth?action=login" replace />;

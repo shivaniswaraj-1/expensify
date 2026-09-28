@@ -23,6 +23,48 @@ const credentials = {
   password: "StrongP@ssw0rd!",
 };
 
+describe("POST /api/auth/signup", () => {
+  it("registers a new user and returns a token", async () => {
+    const res = await request(app)
+      .post("/api/auth/signup")
+      .send(credentials);
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(typeof res.body.token).toBe("string");
+    await expect(User.countDocuments()).resolves.toBe(1);
+  });
+
+  it("rejects an invalid email", async () => {
+    const res = await request(app)
+      .post("/api/auth/signup")
+      .send({ ...credentials, email: "not-an-email" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    await expect(User.countDocuments()).resolves.toBe(0);
+  });
+
+  it("rejects a weak password", async () => {
+    const res = await request(app)
+      .post("/api/auth/signup")
+      .send({ ...credentials, password: "weak" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    await expect(User.countDocuments()).resolves.toBe(0);
+  });
+
+  it("rejects a signup with missing fields", async () => {
+    const res = await request(app)
+      .post("/api/auth/signup")
+      .send({ email: credentials.email });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+});
+
 describe("POST /api/auth/login", () => {
   beforeEach(async () => {
     await new User(credentials).save();

@@ -3,13 +3,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import useOverlayStore, { ExpensePayload } from "@/hooks/useOverlayStore";
 import useUpdateExpense from "@/hooks/useUpdateExpense";
-
-const CATEGORIES = [
-  "Mobile & Computers","Books & Education","Sports, Outdoor & Travel",
-  "Bills & EMI's","Groceries & Pet Supplies","Fashion & Beauty",
-  "Gifts & Donations","Investments","Insurance","Entertainment",
-  "Home & Utilities","Hobbies & Leisure",
-];
+import { CATEGORIES } from "@/constants/categories";
 
 type FormValues = { amount: number; category: string; description: string };
 

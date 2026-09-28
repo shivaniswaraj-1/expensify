@@ -14,7 +14,7 @@ import { ReportData, ReportType } from "@/types/report";
 const BAR_COLORS = ["#6366f1","#10b981","#f59e0b","#ef4444","#06b6d4","#a855f7","#ec4899","#14b8a6"];
 
 const Report = () => {
-  useTitle("Expensify — Analytics");
+  useTitle("SpendWise — Analytics");
   const [type, setType] = useState<ReportType>("monthly");
 
   const { isPending, data } = useQuery({

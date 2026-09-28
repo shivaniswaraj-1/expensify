@@ -31,10 +31,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
 const verifyOrder = asyncHandler(async (req, res, next) => {
   const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
     req.body;
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-    res.status(400);
-    throw new Error("All fields are Mandatory!");
-  }
 
   const generatedSignature = crypto
     .createHmac("SHA256", process.env.RAZOR_PAY_SECRET)
@@ -135,12 +131,6 @@ const leaderboard = asyncHandler(async (req, res, next) => {
 
 const getReport = asyncHandler(async (req, res, next) => {
   const type = req.query.type;
-  const allowedTypes = ["monthly", "yearly", "weekly"];
-
-  if (!allowedTypes.includes(type)) {
-    res.status(400);
-    throw new Error("Invalid Type Specified!");
-  }
 
   let startDate = new Date();
 
@@ -204,7 +194,7 @@ const downloadExpenses = asyncHandler(async (req, res, next) => {
         Amount: amount,
       });
     });
-    const fileName = `Expensify-${req.user._id}/${new Date()}.csv`;
+    const fileName = `SpendWise-${req.user._id}/${new Date()}.csv`;
     const csvFields = ["Date", "Category", "Description", " Amount"];
     const csvParser = new Parser(csvFields);
     const csv = csvParser.parse(array);
@@ -217,7 +207,7 @@ const downloadExpenses = asyncHandler(async (req, res, next) => {
 
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="Expensify.csv"`
+      `attachment; filename="SpendWise.csv"`
     );
     res.setHeader("Content-Type", "text/csv");
     return res.status(200).send(csv);

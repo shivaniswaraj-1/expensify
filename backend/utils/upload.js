@@ -10,7 +10,7 @@ cloudinary.config({
 function uploadToCloudinary(csvContent, filename) {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: "Expensify", resource_type: "raw", public_id: filename },
+      { folder: "SpendWise", resource_type: "raw", public_id: filename },
       (error, result) => {
         if (error) {
           reject(error);

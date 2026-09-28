@@ -1,6 +1,7 @@
 jest.mock("../utils/sendEmail");
 
 const request = require("supertest");
+const { CATEGORIES } = require("../constants/categories");
 const app = require("../app");
 const User = require("../models/user");
 const Expense = require("../models/expense");
@@ -35,7 +36,7 @@ describe("POST /api/expense", () => {
     const res = await request(app)
       .post("/api/expense")
       .set("Authorization", `Bearer ${token}`)
-      .send({ amount: 100, category: "Food", description: "Lunch" });
+      .send({ amount: 100, category: "Entertainment", description: "Lunch" });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -45,7 +46,7 @@ describe("POST /api/expense", () => {
   it("rejects a request with no token", async () => {
     const res = await request(app)
       .post("/api/expense")
-      .send({ amount: 100, category: "Food", description: "Lunch" });
+      .send({ amount: 100, category: "Entertainment", description: "Lunch" });
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -55,7 +56,7 @@ describe("POST /api/expense", () => {
     const res = await request(app)
       .post("/api/expense")
       .set("Authorization", "Bearer not-a-real-token")
-      .send({ amount: 100, category: "Food", description: "Lunch" });
+      .send({ amount: 100, category: "Entertainment", description: "Lunch" });
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -72,6 +73,46 @@ describe("POST /api/expense", () => {
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
   });
+
+  it("rejects a non-positive amount", async () => {
+    const { token } = await createUserAndToken();
+
+    const res = await request(app)
+      .post("/api/expense")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ amount: 0, category: "Entertainment", description: "Free trial" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    await expect(Expense.countDocuments()).resolves.toBe(0);
+  });
+
+  it("rejects a category outside the fixed list", async () => {
+    const { token } = await createUserAndToken();
+
+    const res = await request(app)
+      .post("/api/expense")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ amount: 100, category: "Crypto", description: "Doge" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    await expect(Expense.countDocuments()).resolves.toBe(0);
+  });
+
+  it("accepts every category from the fixed list", async () => {
+    const { token } = await createUserAndToken();
+
+    for (const category of CATEGORIES) {
+      const res = await request(app)
+        .post("/api/expense")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ amount: 10, category, description: "Test" });
+
+      expect(res.status).toBe(201);
+    }
+    await expect(Expense.countDocuments()).resolves.toBe(CATEGORIES.length);
+  });
 });
 
 describe("GET /api/expense", () => {
@@ -80,7 +121,7 @@ describe("GET /api/expense", () => {
 
     const expenses = Array.from({ length: 15 }, (_, i) => ({
       amount: i + 1,
-      category: "Food",
+      category: "Entertainment",
       description: `Expense ${i + 1}`,
       userId: user._id,
     }));
@@ -108,13 +149,13 @@ describe("GET /api/expense", () => {
 
     await Expense.create({
       amount: 50,
-      category: "Food",
+      category: "Entertainment",
       description: "Mine",
       userId: user._id,
     });
     await Expense.create({
       amount: 999,
-      category: "Food",
+      category: "Entertainment",
       description: "Not mine",
       userId: otherUser._id,
     });

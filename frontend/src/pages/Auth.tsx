@@ -16,7 +16,7 @@ const FEATURES = [
 ];
 
 const Auth = () => {
-  useTitle("Expensify — Sign In");
+  useTitle("SpendWise — Sign In");
   const [searchParams, setSearchParams] = useSearchParams();
   const isLogin = searchParams.get("action") !== "signup";
   const [showPass, setShowPass] = useState(false);
@@ -49,7 +49,7 @@ const Auth = () => {
             <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <i className="bi bi-wallet2" style={{ color: "#fff", fontSize: "1.1rem" }} />
             </div>
-            <span style={{ color: "#fff", fontWeight: 800, fontSize: "1rem" }}>Expensify</span>
+            <span style={{ color: "#fff", fontWeight: 800, fontSize: "1rem" }}>SpendWise</span>
           </div>
           <h2 className="auth-hero-h">
             Take control of your <span style={{ background: "linear-gradient(90deg,#a5b4fc,#5eead4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>finances</span>
@@ -77,7 +77,7 @@ const Auth = () => {
             <div className="auth-logo-icon">
               <i className="bi bi-wallet2" />
             </div>
-            <span className="auth-logo-name">Expensify</span>
+            <span className="auth-logo-name">SpendWise</span>
           </div>
 
           <div className="auth-card">

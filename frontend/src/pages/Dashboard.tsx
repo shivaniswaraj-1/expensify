@@ -16,15 +16,9 @@ import DeleteDialog from "@/overlays/DeleteDialog";
 import useOverlayStore from "@/hooks/useOverlayStore";
 import { ChartTooltip } from "@/components/ChartTooltip";
 import { BudgetSection } from "@/components/BudgetSection";
+import { CATEGORIES } from "@/constants/categories";
 
 // ── Constants ──────────────────────────────────────────────────
-const CATEGORIES = [
-  "Mobile & Computers","Books & Education","Sports, Outdoor & Travel",
-  "Bills & EMI's","Groceries & Pet Supplies","Fashion & Beauty",
-  "Gifts & Donations","Investments","Insurance","Entertainment",
-  "Home & Utilities","Hobbies & Leisure",
-];
-
 const CAT_COLORS: Record<string, string> = {
   "Mobile & Computers":"#6366f1","Books & Education":"#06b6d4",
   "Sports, Outdoor & Travel":"#10b981","Bills & EMI's":"#f59e0b",
@@ -47,7 +41,7 @@ const PIE_FALLBACK = ["#6366f1","#06b6d4","#10b981","#f59e0b","#ef4444","#ec4899
 
 // ── Main Dashboard ──────────────────────────────────────────────
 const Dashboard = () => {
-  useTitle("Expensify — Dashboard");
+  useTitle("SpendWise — Dashboard");
   const queryClient = useQueryClient();
   const { onOpen } = useOverlayStore();
   const navigate = useNavigate();

@@ -9,7 +9,7 @@ import axiosInstance from "@/lib/axios";
 import { Loading } from "@/components/Loading";
 
 const ResetPassword = () => {
-  useTitle("Expensify — Reset Password");
+  useTitle("SpendWise — Reset Password");
   const [showPass1, setShowPass1] = useState(false);
   const [showPass2, setShowPass2] = useState(false);
   const { register, handleSubmit, getValues } = useForm();
@@ -61,7 +61,7 @@ const ResetPassword = () => {
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div className="auth-logo" style={{ marginBottom: "1.5rem" }}>
           <div className="auth-logo-icon"><i className="bi bi-wallet2" /></div>
-          <span className="auth-logo-name">Expensify</span>
+          <span className="auth-logo-name">SpendWise</span>
         </div>
 
         <div className="auth-card">

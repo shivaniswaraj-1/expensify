@@ -41,7 +41,7 @@ const STATS = [
 ];
 
 const Root = () => {
-  useTitle("Expensify — Smart Finance Tracker");
+  useTitle("SpendWise — Smart Finance Tracker");
 
   return (
     <div className="landing">
@@ -51,7 +51,7 @@ const Root = () => {
           <div className="landing-logo-icon">
             <i className="bi bi-wallet2" />
           </div>
-          <span>Expensify</span>
+          <span>SpendWise</span>
         </div>
         <div style={{ display: "flex", gap: ".75rem", alignItems: "center" }}>
           <Link
@@ -149,7 +149,7 @@ const Root = () => {
       <div style={{ borderTop: "1px solid rgba(255,255,255,.07)", padding: "1.5rem 2rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
           <i className="bi bi-wallet2" style={{ color: "rgba(255,255,255,.4)", fontSize: "1rem" }} />
-          <span style={{ color: "rgba(255,255,255,.4)", fontSize: ".8rem" }}>Expensify © 2026</span>
+          <span style={{ color: "rgba(255,255,255,.4)", fontSize: ".8rem" }}>SpendWise © 2026</span>
         </div>
         <div style={{ color: "rgba(255,255,255,.3)", fontSize: ".75rem" }}>
           Built with React · Bootstrap 5 · MongoDB

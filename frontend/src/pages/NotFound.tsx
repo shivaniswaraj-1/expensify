@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useTitle } from "react-use";
 
 const NotFound = () => {
-  useTitle("Expensify — Page Not Found");
+  useTitle("SpendWise — Page Not Found");
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", background: "var(--bg)" }}>
       <div style={{ textAlign: "center", maxWidth: 400 }}>

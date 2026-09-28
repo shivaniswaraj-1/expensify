@@ -1,4 +1,3 @@
-const validator = require("validator");
 const { v4: uuidv4 } = require("uuid");
 const asyncHandler = require("express-async-handler");
 const mongoose = require("mongoose");
@@ -12,31 +11,12 @@ let emailTemplate = require("../views/emailTemplate");
 const createUser = asyncHandler(async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are Mandatory!",
-      });
-    }
     //check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
         success: false,
         message: "User Already Exists!",
-      });
-    }
-    //check if email or password is correct
-    if (!validator.isEmail(email)) {
-      return res.status(400).json({
-        success: false,
-        message: "Please use a Valid Email!",
-      });
-    }
-    if (!validator.isStrongPassword(password)) {
-      return res.status(400).json({
-        success: false,
-        message: "Password is too weak!",
       });
     }
     //Signup the user
@@ -65,12 +45,6 @@ const createUser = asyncHandler(async (req, res, next) => {
 const login = asyncHandler(async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "All fields are Mandatory!",
-      });
-    }
     //check if user exists
     const result = await User.findOne({ email });
     if (!result) {
@@ -127,11 +101,6 @@ const refreshToken = asyncHandler(async (req, res, next) => {
 const resetPassword = asyncHandler(async (req, res, next) => {
   const { email } = req.body;
 
-  if (!email) {
-    res.status(400);
-    throw new Error("Please provide an email!");
-  }
-
   // Always send back the same response whether or not the account exists,
   // so this endpoint can't be used to discover which emails are registered.
   const genericResponse = {
@@ -167,7 +136,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
     // Send the reset-password email via Nodemailer (Gmail SMTP)
     await sendEmail({
       to: email,
-      subject: "Reset Password for Expensify Account",
+      subject: "Reset Password for SpendWise Account",
       html: emailContent,
     });
 
@@ -209,20 +178,10 @@ const changePassword = asyncHandler(async (req, res, next) => {
   const token = req.body.token;
   const { password } = req.body;
 
-  if (!password) {
-    res.status(400);
-    throw new Error("Password is required!");
-  }
-
   const result = await ResetPassword.findOne({ token });
   if (!result) {
     res.status(400);
     throw new Error("Invalid Session!");
-  }
-
-  if (!validator.isStrongPassword(password)) {
-    res.status(400);
-    throw new Error("Password is not strong enough!");
   }
 
   const expiresInDate = new Date(result.expiresIn);

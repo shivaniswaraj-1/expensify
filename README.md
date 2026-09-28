@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/Expensify-Finance%20Tracker-6366f1?style=for-the-badge&logo=wallet&logoColor=white" alt="Expensify" />
+<img src="https://img.shields.io/badge/SpendWise-Finance%20Tracker-6366f1?style=for-the-badge&logo=wallet&logoColor=white" alt="SpendWise" />
 
-# Expensify — Smart Finance Tracker
+# SpendWise — Smart Finance Tracker
 
 **A production-grade, full-stack expense management SaaS dashboard**
 
@@ -12,6 +12,8 @@
 [![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=node.js)](https://nodejs.org)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb)](https://mongodb.com)
 [![Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?style=flat-square&logo=vercel)](https://vercel.com)
+
+**Live:** _add your deployed frontend URL here once deployed, e.g. https://spendwise.vercel.app_
 
 </div>
 
@@ -46,6 +48,13 @@
 - 📧 **Password Reset** — Email-based reset flow via Nodemailer
 - 💾 **Persistent Login** — Sessions survive page refreshes
 
+### Backend Hardening
+- ✅ **Input Validation** — Every route validates its input with Zod (positive amounts, real email addresses, strong passwords, category enums) before it reaches a controller
+- 🗂 **Fixed Category List** — A single list of allowed expense categories, shared by the frontend dropdown and the backend validator
+- 🚦 **Rate Limiting** — `express-rate-limit` caps abuse globally, with a tighter cap on auth endpoints (login/signup/reset)
+- 🧯 **Centralized Error Handling** — One Express error middleware returns consistent `{ success, message }` JSON for every failure, including unmatched routes
+- 🤖 **AI-Ready** — All third-party API calls (including any future AI features) run on the backend only; the frontend never sees a provider API key
+
 ### UI & Experience
 - 🌙 **Dark Mode** — Full system-wide dark theme, persisted to localStorage
 - 📱 **Fully Responsive** — Mobile sidebar, adaptive layouts at all breakpoints
@@ -69,11 +78,14 @@
 | **HTTP** | Axios (with interceptors) |
 | **Animations** | CSS transitions + CountUp.js |
 | **Backend** | Node.js, Express.js |
+| **Validation** | Zod |
+| **Rate Limiting** | express-rate-limit |
 | **Database** | MongoDB with Mongoose |
 | **Auth** | JSON Web Tokens (JWT) |
 | **Email** | Nodemailer |
+| **Testing** | Jest + Supertest + mongodb-memory-server |
 | **Deploy FE** | Vercel |
-| **Deploy BE** | Render / Railway |
+| **Deploy BE** | Render |
 | **DB Hosting** | MongoDB Atlas |
 
 ---
@@ -88,8 +100,8 @@
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/yourusername/expensify.git
-cd expensify
+git clone https://github.com/shivaniswaraj-1/spendwise.git
+cd spendwise
 ```
 
 ### 2. Backend setup
@@ -110,34 +122,57 @@ npm install
 npm run dev               # Starts on port 5173
 ```
 
+### 4. Run the backend tests
+
+```bash
+cd backend
+npm test                  # Jest + Supertest, runs against an in-memory MongoDB
+```
+
+Covers login, signup, add-expense, and invalid-input/validation cases.
+
+---
+
+## 🔒 Fixed Expense Categories
+
+Every expense must use one of these categories — enforced by Zod on the backend (`backend/constants/categories.js`) and mirrored in the frontend dropdown (`frontend/src/constants/categories.ts`):
+
+Mobile & Computers · Books & Education · Sports, Outdoor & Travel · Bills & EMI's · Groceries & Pet Supplies · Fashion & Beauty · Gifts & Donations · Investments · Insurance · Entertainment · Home & Utilities · Hobbies & Leisure
+
 ---
 
 ## 🌍 Deployment
 
-### Frontend → Vercel
-1. Push repo to GitHub
-2. Import project on [vercel.com](https://vercel.com)
-3. Set root directory to `frontend`
-4. Add env variable: `VITE_SERVER_ADDRESS=https://your-api.onrender.com`
-5. Deploy ✅
+### Database → MongoDB Atlas
+1. Create a free cluster at [mongodb.com/atlas](https://mongodb.com/atlas)
+2. Add a database user and allow network access (0.0.0.0/0 for simplicity, or Render's IPs)
+3. Copy the connection string into `MONGO_URI` on the backend
 
 ### Backend → Render
-1. Create new **Web Service** on [render.com](https://render.com)
-2. Connect your GitHub repo, set root to `backend`
+1. Create a new **Web Service** on [render.com](https://render.com)
+2. Connect your GitHub repo, set root directory to `backend`
 3. Build command: `npm install`
 4. Start command: `npm start`
-5. Add all env variables from `.env.example`
-6. Deploy ✅
+5. Add every variable from `backend/.env.example` under Render's Environment tab
+6. Deploy, then copy the resulting `https://your-api.onrender.com` URL
+
+### Frontend → Vercel
+1. Import the project on [vercel.com](https://vercel.com)
+2. Set root directory to `frontend`
+3. Add env variable: `VITE_SERVER_ADDRESS=https://your-api.onrender.com`
+4. Deploy, then copy the resulting URL back into the backend's CORS allow-list in `backend/app.js` and into `FRONT_END_URL` on Render
+5. Paste the live URL at the top of this README
 
 ---
 
 ## 📁 Project Structure
 
 ```
-expensify/
+spendwise/
 ├── frontend/
 │   └── src/
 │       ├── components/      # Shared UI components (Loading, etc.)
+│       ├── constants/       # Shared frontend constants (categories, etc.)
 │       ├── hoc/             # Higher-order components (PrivateRoute, PublicRoute)
 │       ├── hooks/           # Custom React hooks
 │       ├── lib/             # Axios instance, QueryClient
@@ -149,10 +184,13 @@ expensify/
 │       ├── types/           # TypeScript types
 │       └── utils/           # Auth storage utilities
 └── backend/
+    ├── constants/           # Fixed category list, shared with the frontend
     ├── controllers/         # Route handlers
-    ├── middleware/          # Auth, error handling
+    ├── middleware/          # Auth, validation, rate limiting, error handling
     ├── models/              # Mongoose schemas
     ├── routes/              # Express routers
+    ├── schemas/             # Zod validation schemas per resource
+    ├── tests/               # Jest + Supertest API tests
     └── utils/               # DB connection, email
 ```
 
@@ -160,7 +198,7 @@ expensify/
 
 ## 📄 License
 
-SHIVANI © 2026 Expensify
+SHIVANI © 2026 SpendWise
 
 ---
 
