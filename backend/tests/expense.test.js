@@ -43,6 +43,30 @@ describe("POST /api/expense", () => {
     await expect(Expense.countDocuments()).resolves.toBe(1);
   });
 
+  it("stores receipt metadata when it was created from a scanned receipt", async () => {
+    const { token } = await createUserAndToken();
+
+    const res = await request(app)
+      .post("/api/expense")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        amount: 42.5,
+        category: "Entertainment",
+        description: "Corner Cafe",
+        date: "2024-03-05",
+        merchant: "Corner Cafe",
+        receiptUrl: "https://mock-cloudinary.test/mock-receipt.jpg",
+        receiptConfidence: 0.92,
+      });
+
+    expect(res.status).toBe(201);
+    const saved = await Expense.findOne();
+    expect(saved.merchant).toBe("Corner Cafe");
+    expect(saved.receiptUrl).toBe("https://mock-cloudinary.test/mock-receipt.jpg");
+    expect(saved.receiptConfidence).toBe(0.92);
+    expect(saved.date.toISOString().slice(0, 10)).toBe("2024-03-05");
+  });
+
   it("rejects a request with no token", async () => {
     const res = await request(app)
       .post("/api/expense")

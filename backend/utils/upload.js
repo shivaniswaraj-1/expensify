@@ -27,4 +27,23 @@ function uploadToCloudinary(csvContent, filename) {
   });
 }
 
-module.exports = uploadToCloudinary;
+// Uploads a scanned receipt photo (as a Buffer, from multer's memory
+// storage) so it can be linked to the expense it was scanned for.
+function uploadImageToCloudinary(imageBuffer, filename) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "SpendWise/receipts", resource_type: "image", public_id: filename },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result.secure_url);
+        }
+      }
+    );
+
+    Readable.from([imageBuffer]).pipe(uploadStream);
+  });
+}
+
+module.exports = { uploadToCloudinary, uploadImageToCloudinary };

@@ -20,4 +20,14 @@ const authLimiter = rateLimit({
   message: { success: false, message: "Too many attempts, please try again later." },
 });
 
-module.exports = { apiLimiter, authLimiter };
+// AI calls cost real money per request, so this is capped well below the
+// general API limit regardless of how generous that one is.
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many receipt scans, please try again later." },
+});
+
+module.exports = { apiLimiter, authLimiter, aiLimiter };

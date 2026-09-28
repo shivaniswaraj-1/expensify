@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const User = require("../models/user");
 const Expense = require("../models/expense");
 const Download = require("../models/download");
-const uploadToCloudinary = require("../utils/upload");
+const { uploadToCloudinary } = require("../utils/upload");
 const moment = require("moment");
 const getPagination = require("../utils/pagination");
 

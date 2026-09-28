@@ -5,6 +5,10 @@ type Expense = {
     createdAt: string;
     description: string;
     updatedAt: string;
+    date?: string;
+    merchant?: string;
+    receiptUrl?: string;
+    receiptConfidence?: number;
 };
 
 type DashboardData = {

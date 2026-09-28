@@ -48,6 +48,13 @@
 - 📧 **Password Reset** — Email-based reset flow via Nodemailer
 - 💾 **Persistent Login** — Sessions survive page refreshes
 
+### AI Receipt Scanning
+- 📷 **Snap & Fill** — Upload a bill photo and Gemini's vision model extracts the amount, date, merchant, and category
+- ✅ **Confirm, Don't Trust** — Extracted values pre-fill the Add Expense form for you to review or edit; nothing saves until you submit
+- 🔁 **Retry, Then Fall Back** — A malformed AI response is retried once, then falls back to an empty form with a "please fill it in" message rather than showing garbage
+- 🧾 **Receipt Storage** — The photo itself is uploaded to Cloudinary and linked to the saved expense
+- 🔐 **Server-Side Only** — The Gemini API key lives only in the backend's environment; the frontend never sees it
+
 ### Backend Hardening
 - ✅ **Input Validation** — Every route validates its input with Zod (positive amounts, real email addresses, strong passwords, category enums) before it reaches a controller
 - 🗂 **Fixed Category List** — A single list of allowed expense categories, shared by the frontend dropdown and the backend validator
@@ -78,6 +85,8 @@
 | **HTTP** | Axios (with interceptors) |
 | **Animations** | CSS transitions + CountUp.js |
 | **Backend** | Node.js, Express.js |
+| **AI** | Google Gemini (vision, structured JSON output) |
+| **File Uploads** | Multer (memory storage, 5MB limit) |
 | **Validation** | Zod |
 | **Rate Limiting** | express-rate-limit |
 | **Database** | MongoDB with Mongoose |
@@ -129,7 +138,18 @@ cd backend
 npm test                  # Jest + Supertest, runs against an in-memory MongoDB
 ```
 
-Covers login, signup, add-expense, and invalid-input/validation cases.
+Covers login, signup, add-expense, invalid-input/validation cases, and the receipt-scanning retry/fallback behavior (with Gemini mocked, so the suite doesn't need a real API key or network access).
+
+### 5. Enable receipt scanning (optional)
+
+Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and add it to `backend/.env`:
+
+```
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Without it, the rest of the app works fine — the "Scan a receipt" button will just fail with a "please fill it in" message.
 
 ---
 
@@ -138,6 +158,21 @@ Covers login, signup, add-expense, and invalid-input/validation cases.
 Every expense must use one of these categories — enforced by Zod on the backend (`backend/constants/categories.js`) and mirrored in the frontend dropdown (`frontend/src/constants/categories.ts`):
 
 Mobile & Computers · Books & Education · Sports, Outdoor & Travel · Bills & EMI's · Groceries & Pet Supplies · Fashion & Beauty · Gifts & Donations · Investments · Insurance · Entertainment · Home & Utilities · Hobbies & Leisure
+
+---
+
+## 🎯 Measuring Receipt-Scanning Accuracy
+
+`backend/eval/evaluate-receipts.js` runs the exact same extraction code the live app uses against a batch of real receipts and scores it, so a prompt change can be judged by a number instead of a guess.
+
+1. Drop ~30 real receipt photos into `backend/eval/receipts/` (restaurant, grocery, fuel, online order, plus a few blurry/handwritten ones — this folder is gitignored since receipts are personal)
+2. Record the correct amount and date for each file in `backend/eval/expected.json`
+3. From `backend/`, run:
+   ```bash
+   npm run eval:receipts
+   ```
+4. It prints a per-file ✓/✗ and a final score, e.g. `Amount accuracy: 21/30`, `Date accuracy: 19/30`
+5. Tweak the prompt in `backend/utils/geminiClient.js`, re-run, and compare — "improved from 21/30 to 27/30" is the story you're after
 
 ---
 
@@ -186,12 +221,13 @@ spendwise/
 └── backend/
     ├── constants/           # Fixed category list, shared with the frontend
     ├── controllers/         # Route handlers
-    ├── middleware/          # Auth, validation, rate limiting, error handling
+    ├── eval/                # Receipt-scanning accuracy harness (receipts/ is gitignored)
+    ├── middleware/          # Auth, validation, rate limiting, uploads, error handling
     ├── models/              # Mongoose schemas
     ├── routes/              # Express routers
     ├── schemas/             # Zod validation schemas per resource
     ├── tests/               # Jest + Supertest API tests
-    └── utils/               # DB connection, email
+    └── utils/               # DB connection, email, Cloudinary, Gemini client
 ```
 
 ---

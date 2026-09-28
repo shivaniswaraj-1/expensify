@@ -9,6 +9,12 @@ const expenseSchema = z.object({
     error: "Category must be one of the supported categories",
   }),
   description: z.string().trim().min(1, "Description is required"),
+  // Optional metadata that comes from the receipt-scanning flow — a
+  // manually-added expense simply omits these.
+  date: z.coerce.date().optional(),
+  merchant: z.string().trim().optional(),
+  receiptUrl: z.url().optional(),
+  receiptConfidence: z.coerce.number().min(0).max(1).optional(),
 });
 
 module.exports = { addExpenseSchema: expenseSchema, updateExpenseSchema: expenseSchema };

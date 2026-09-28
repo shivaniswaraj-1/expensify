@@ -52,7 +52,9 @@ const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, setValue } = useForm();
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
 
   // Debounce the search box so we don't hit the API on every keystroke, and
   // send the user back to page 1 once a new search actually takes effect
@@ -159,17 +161,59 @@ const Dashboard = () => {
   const expenses = data?.expenses ?? [];
 
   const createExpense = useMutation({
-    mutationFn: (formData: Record<string, unknown>) => axiosInstance.post("/expense", formData),
+    mutationFn: (formData: Record<string, unknown>) =>
+      axiosInstance.post("/expense", receiptUrl ? { ...formData, receiptUrl } : formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["all-expenses-stats"] });
       reset();
+      setReceiptUrl(null);
       toast.success("Expense added successfully!");
     },
     onError: () => toast.error("Failed to add expense. Please try again."),
   });
 
   const onSubmit = (data: Record<string, unknown>) => createExpense.mutate(data);
+
+  // Receipt scanning: upload a photo, let Gemini (via the backend) pre-fill
+  // the same Add Expense form below, then the user confirms or edits before
+  // it's actually saved.
+  const scanReceipt = useMutation({
+    mutationFn: (file: File) => {
+      const body = new FormData();
+      body.append("receipt", file);
+      return axiosInstance.post("/receipts/scan", body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+    },
+    onSuccess: (res) => {
+      const { success, extracted, receiptUrl: url, message } = res.data as {
+        success: boolean;
+        extracted?: { amount: number; category: string; merchant: string };
+        receiptUrl: string | null;
+        message?: string;
+      };
+      if (url) setReceiptUrl(url);
+
+      if (success && extracted) {
+        setValue("amount", extracted.amount);
+        if (CATEGORIES.includes(extracted.category as (typeof CATEGORIES)[number])) {
+          setValue("category", extracted.category);
+        }
+        setValue("description", extracted.merchant);
+        toast.success("Receipt scanned! Review the details below.");
+      } else {
+        toast.info(message || "Couldn't read this receipt, please fill it in.");
+      }
+    },
+    onError: () => toast.error("Couldn't scan the receipt. Please fill the form manually."),
+  });
+
+  const handleReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) scanReceipt.mutate(file);
+  };
 
   const handlePrev = () => { if (currentPage > 1) navigate(`/dashboard?page=${currentPage - 1}`); };
   const handleNext = () => { if (data && currentPage < data.totalPages) navigate(`/dashboard?page=${currentPage + 1}`); };
@@ -394,6 +438,29 @@ const Dashboard = () => {
                 <i className="bi bi-plus-lg" />
               </div>
             </div>
+
+            <input
+              ref={receiptInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleReceiptChange}
+              hidden
+            />
+            <button
+              type="button"
+              className="btn btn-ghost w-100 mb-3"
+              onClick={() => receiptInputRef.current?.click()}
+              disabled={scanReceipt.isPending}
+              style={{ justifyContent: "center", gap: ".5rem", border: "1px dashed var(--border)" }}
+            >
+              {scanReceipt.isPending ? (
+                <><span className="spinner-border spinner-border-sm" /> Reading receipt...</>
+              ) : receiptUrl ? (
+                <><i className="bi bi-check-circle-fill" style={{ color: "#10b981" }} /> Receipt attached — scan another?</>
+              ) : (
+                <><i className="bi bi-camera-fill" /> Scan a receipt</>
+              )}
+            </button>
 
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="row g-2 mb-3 expense-form-row">

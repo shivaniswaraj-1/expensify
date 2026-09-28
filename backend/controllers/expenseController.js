@@ -5,7 +5,7 @@ const User = require("../models/user");
 const getPagination = require("../utils/pagination");
 
 const addExpense = asyncHandler(async (req, res, next) => {
-  const { amount, category, description } = req.body;
+  const { amount, category, description, date, merchant, receiptUrl, receiptConfidence } = req.body;
 
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -17,6 +17,10 @@ const addExpense = asyncHandler(async (req, res, next) => {
           amount,
           category,
           description,
+          date,
+          merchant,
+          receiptUrl,
+          receiptConfidence,
           userId: req.user,
         },
       ],

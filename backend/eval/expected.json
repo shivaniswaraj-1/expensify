@@ -1,0 +1,4 @@
+{
+  "_comment": "One entry per file in eval/receipts/. amount is a number, date is YYYY-MM-DD. Delete this _comment key once you add real entries.",
+  "example-receipt.jpg": { "amount": 12.5, "date": "2024-03-05" }
+}
