@@ -16,7 +16,10 @@ import DeleteDialog from "@/overlays/DeleteDialog";
 import useOverlayStore from "@/hooks/useOverlayStore";
 import { ChartTooltip } from "@/components/ChartTooltip";
 import { BudgetSection } from "@/components/BudgetSection";
+import { InsightsCard } from "@/components/InsightsCard";
+import { AskSpendingCard } from "@/components/AskSpendingCard";
 import { CATEGORIES } from "@/constants/categories";
+import { useVoiceInput, type VoiceLang } from "@/hooks/useVoiceInput";
 
 // ── Constants ──────────────────────────────────────────────────
 const CAT_COLORS: Record<string, string> = {
@@ -55,6 +58,14 @@ const Dashboard = () => {
   const { register, handleSubmit, reset, setValue } = useForm();
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const receiptInputRef = useRef<HTMLInputElement>(null);
+  const [voiceLang, setVoiceLangState] = useState<VoiceLang>(
+    () => (localStorage.getItem("voiceLang") as VoiceLang | null) ?? "hi-IN"
+  );
+  const setVoiceLang = (lang: VoiceLang) => {
+    setVoiceLangState(lang);
+    localStorage.setItem("voiceLang", lang);
+  };
+  const { isSupported: voiceSupported, isListening, start: startListening } = useVoiceInput(voiceLang);
 
   // Debounce the search box so we don't hit the API on every keystroke, and
   // send the user back to page 1 once a new search actually takes effect
@@ -215,6 +226,40 @@ const Dashboard = () => {
     if (file) scanReceipt.mutate(file);
   };
 
+  // Voice logging: the browser turns speech into text, the backend asks
+  // Gemini to turn that transcript (Hindi/English/Hinglish) into the same
+  // shape as a receipt extraction, and it pre-fills this same form.
+  const parseVoice = useMutation({
+    mutationFn: (transcript: string) => axiosInstance.post("/voice/parse", { transcript }),
+    onSuccess: (res) => {
+      const { success, extracted, message } = res.data as {
+        success: boolean;
+        extracted?: { amount: number; category: string; note: string };
+        message?: string;
+      };
+
+      if (success && extracted) {
+        setValue("amount", extracted.amount);
+        if (CATEGORIES.includes(extracted.category as (typeof CATEGORIES)[number])) {
+          setValue("category", extracted.category);
+        }
+        setValue("description", extracted.note);
+        toast.success("Got it! Review the details below.");
+      } else {
+        toast.info(message || "Couldn't understand that, please fill it in.");
+      }
+    },
+    onError: () => toast.error("Couldn't process that. Please fill the form manually."),
+  });
+
+  const handleMicClick = () => {
+    if (isListening || parseVoice.isPending) return;
+    startListening(
+      (transcript) => parseVoice.mutate(transcript),
+      (message) => toast.error(message)
+    );
+  };
+
   const handlePrev = () => { if (currentPage > 1) navigate(`/dashboard?page=${currentPage - 1}`); };
   const handleNext = () => { if (data && currentPage < data.totalPages) navigate(`/dashboard?page=${currentPage + 1}`); };
   const handleRowChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -313,6 +358,16 @@ const Dashboard = () => {
 
         <div className="col-6 col-lg-3">
           <BudgetSection totalExpense={thisMonth} />
+        </div>
+      </div>
+
+      {/* ── AI: INSIGHTS + ASK YOUR SPENDING ── */}
+      <div className="row g-3 mb-4">
+        <div className="col-lg-6">
+          <InsightsCard />
+        </div>
+        <div className="col-lg-6">
+          <AskSpendingCard />
         </div>
       </div>
 
@@ -461,6 +516,39 @@ const Dashboard = () => {
                 <><i className="bi bi-camera-fill" /> Scan a receipt</>
               )}
             </button>
+
+            <div className={`d-flex gap-2${voiceSupported ? " mb-3" : " mb-1"}`}>
+              <button
+                type="button"
+                className={`btn btn-ghost flex-grow-1${isListening ? " mic-listening" : ""}`}
+                onClick={handleMicClick}
+                disabled={!voiceSupported || isListening || parseVoice.isPending}
+                style={{ justifyContent: "center", gap: ".5rem", border: "1px dashed var(--border)" }}
+              >
+                {isListening ? (
+                  <><span className="mic-pulse-dot" /> Listening...</>
+                ) : parseVoice.isPending ? (
+                  <><span className="spinner-border spinner-border-sm" /> Processing...</>
+                ) : (
+                  <><i className="bi bi-mic-fill" /> Voice log</>
+                )}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                title={voiceLang === "hi-IN" ? "Listening in Hindi/Hinglish — tap to switch to English" : "Listening in English — tap to switch to Hindi/Hinglish"}
+                onClick={() => setVoiceLang(voiceLang === "hi-IN" ? "en-IN" : "hi-IN")}
+                disabled={!voiceSupported}
+                style={{ width: "auto", padding: "0 .7rem", fontSize: ".72rem", fontWeight: 700 }}
+              >
+                {voiceLang === "hi-IN" ? "हिं" : "EN"}
+              </button>
+            </div>
+            {!voiceSupported && (
+              <div className="mb-3" style={{ fontSize: ".72rem", color: "var(--text-4)" }}>
+                Voice input works best in Chrome — please use Chrome or fill the form manually.
+              </div>
+            )}
 
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="row g-2 mb-3 expense-form-row">

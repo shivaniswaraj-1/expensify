@@ -97,7 +97,7 @@ describe("POST /api/receipts/scan", () => {
 
   it("returns the extracted fields and a receipt URL on success", async () => {
     const token = await createUserAndToken();
-    extractReceiptWithGemini.mockResolvedValueOnce(validExtraction);
+    extractReceiptWithGemini.mockResolvedValueOnce({ json: validExtraction, tokensUsed: 120 });
 
     const res = await request(app)
       .post("/api/receipts/scan")
@@ -119,8 +119,8 @@ describe("POST /api/receipts/scan", () => {
   it("retries once on a bad response before succeeding", async () => {
     const token = await createUserAndToken();
     extractReceiptWithGemini
-      .mockResolvedValueOnce({ amount: "not-a-number" })
-      .mockResolvedValueOnce(validExtraction);
+      .mockResolvedValueOnce({ json: { amount: "not-a-number" }, tokensUsed: 40 })
+      .mockResolvedValueOnce({ json: validExtraction, tokensUsed: 120 });
 
     const res = await request(app)
       .post("/api/receipts/scan")

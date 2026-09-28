@@ -1,12 +1,21 @@
 const asyncHandler = require("express-async-handler");
 const { extractReceiptWithRetry } = require("../utils/extractReceipt");
 const { uploadImageToCloudinary } = require("../utils/upload");
+const { logAiCall } = require("../utils/aiLogger");
 
 const scanReceipt = asyncHandler(async (req, res, next) => {
   const base64Image = req.file.buffer.toString("base64");
   const mimeType = req.file.mimetype;
 
-  const extracted = await extractReceiptWithRetry(base64Image, mimeType);
+  const startedAt = Date.now();
+  const { extracted, tokensUsed } = await extractReceiptWithRetry(base64Image, mimeType);
+  logAiCall({
+    feature: "receipt_scan",
+    userId: req.user._id,
+    tokensUsed,
+    responseTimeMs: Date.now() - startedAt,
+    success: !!extracted,
+  });
 
   // Keep the photo even when extraction fails, so the user's evidence isn't
   // lost — they'll just fill the form in manually instead.

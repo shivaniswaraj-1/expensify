@@ -47,7 +47,7 @@ async function evaluateOne(filename, expected) {
   }
 
   const base64Image = fs.readFileSync(filePath).toString("base64");
-  const extracted = await extractReceiptWithRetry(base64Image, mimeType);
+  const { extracted } = await extractReceiptWithRetry(base64Image, mimeType);
 
   if (!extracted) {
     return { filename, error: "extraction failed (both attempts)" };

@@ -21,6 +21,7 @@ export const PrivateRoute = ({
   const pageMeta: Record<string, { title: string; sub: string }> = {
     "/dashboard": { title: "Dashboard", sub: "Overview of your finances" },
     "/reports": { title: "Analytics", sub: "Detailed spending insights" },
+    "/ai-usage": { title: "AI Usage", sub: "Cost and speed per AI feature" },
   };
   const meta = pageMeta[location.pathname] ?? { title: "SpendWise", sub: "" };
 

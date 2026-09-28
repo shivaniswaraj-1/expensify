@@ -6,6 +6,8 @@ const authRoutes = require("./routes/auth");
 const expenseRoutes = require("./routes/expense");
 const premiumRoutes = require("./routes/premium");
 const receiptRoutes = require("./routes/receipt");
+const voiceRoutes = require("./routes/voice");
+const aiRoutes = require("./routes/ai");
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/expense", expenseRoutes);
 app.use("/api/premium", premiumRoutes);
 app.use("/api/receipts", receiptRoutes);
+app.use("/api/voice", voiceRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.use((req, res, next) => {
   res.status(404);

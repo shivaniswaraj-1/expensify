@@ -10,6 +10,7 @@ const Root         = lazy(() => import("./pages/Root"));
 const NotFound     = lazy(() => import("./pages/NotFound"));
 const Dashboard    = lazy(() => import("./pages/Dashboard"));
 const Report       = lazy(() => import("./pages/Report"));
+const AiUsage      = lazy(() => import("./pages/AiUsage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
         <Route element={<PrivateRoute user={user} isInitializing={isInitializing} />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/reports"   element={<Report />} />
+          <Route path="/ai-usage"  element={<AiUsage />} />
         </Route>
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />

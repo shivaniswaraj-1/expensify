@@ -58,6 +58,15 @@ const Sidebar = ({ show, onClose }: SidebarProps) => {
             <span>Analytics</span>
           </NavLink>
 
+          <NavLink
+            to="/ai-usage"
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+            onClick={onClose}
+          >
+            <i className="bi bi-cpu-fill" />
+            <span>AI Usage</span>
+          </NavLink>
+
           <div className="sidebar-section-label mt-2">Account</div>
           <a href="#" className="nav-link" onClick={(e) => e.preventDefault()}>
             <i className="bi bi-bell-fill" />
