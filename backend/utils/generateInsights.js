@@ -1,6 +1,8 @@
 const { ZodError } = require("zod");
 const { generateSpendingInsights } = require("./geminiClient");
 const { insightsResponseSchema } = require("../schemas/insightsSchema");
+const { sleep } = require("./sleep");
+const { getRetryDelayMs } = require("./geminiRetryDelay");
 
 const MAX_ATTEMPTS = 2;
 
@@ -10,18 +12,21 @@ const MAX_ATTEMPTS = 2;
 // instead of showing nothing.
 async function generateInsightsWithRetry(stats) {
   let tokensUsed = 0;
+  let lastErrorStatus = null;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const { json, tokensUsed: used } = await generateSpendingInsights(stats);
       tokensUsed += used ?? 0;
       const parsed = insightsResponseSchema.parse(json);
-      return { insights: parsed.insights, tokensUsed };
+      return { insights: parsed.insights, tokensUsed, lastErrorStatus: null };
     } catch (error) {
+      lastErrorStatus = error.status ?? null;
       const reason = error instanceof ZodError ? "invalid shape" : error.message;
       console.error(`Insight generation attempt ${attempt}/${MAX_ATTEMPTS} failed: ${reason}`);
+      if (attempt < MAX_ATTEMPTS) await sleep(getRetryDelayMs(error, attempt));
     }
   }
-  return { insights: null, tokensUsed };
+  return { insights: null, tokensUsed, lastErrorStatus };
 }
 
 // A deterministic, zero-cost fallback so a Gemini outage still shows

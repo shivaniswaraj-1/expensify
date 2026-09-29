@@ -372,6 +372,12 @@ body {
   box-shadow: var(--shadow);
   padding: 1.5rem;
   height: 100%;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+.chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-2);
 }
 .chart-card-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -574,6 +580,21 @@ body {
   flex-shrink: 0;
 }
 .btn-icon.btn-sm { width: 28px; height: 28px; }
+
+/* Text-only "link" buttons (forgot password, switch login/signup, etc.) —
+   underline + a color shift on hover so it's clear they're clickable. */
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+.link-btn:hover { color: var(--primary-light); text-decoration: underline; }
 
 .mic-listening {
   border-color: var(--danger) !important;

@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
+import moment from "moment";
 import useOverlayStore, { ExpensePayload } from "@/hooks/useOverlayStore";
 import useUpdateExpense from "@/hooks/useUpdateExpense";
 import { CATEGORIES } from "@/constants/categories";
 
-type FormValues = { amount: number; category: string; description: string };
+type FormValues = { amount: number; category: string; description: string; date: string };
 
 const EditExpenseDialog = () => {
   const { isOpen, onClose, type, data } = useOverlayStore();
@@ -15,7 +16,12 @@ const EditExpenseDialog = () => {
 
   useEffect(() => {
     if (overlayData && type === "EDIT_DIALOG") {
-      reset({ amount: overlayData.amount, category: overlayData.category, description: overlayData.description });
+      reset({
+        amount: overlayData.amount,
+        category: overlayData.category,
+        description: overlayData.description,
+        date: moment(overlayData.date).isValid() ? moment(overlayData.date).format("YYYY-MM-DD") : moment().format("YYYY-MM-DD"),
+      });
     }
   }, [overlayData, type, reset]);
 
@@ -56,6 +62,10 @@ const EditExpenseDialog = () => {
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Date</label>
+            <input className="form-control" type="date" required max={moment().format("YYYY-MM-DD")} {...register("date")} />
           </div>
           <div className="mb-4">
             <label className="form-label">Description</label>

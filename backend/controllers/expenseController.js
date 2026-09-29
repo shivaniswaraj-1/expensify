@@ -100,19 +100,23 @@ const deleteUserExpense = asyncHandler(async (req, res, next) => {
     throw new Error("Invalid Expense Id!");
   }
 
+  // Checked before opening the transaction, so a "not found" throw reaches
+  // the error handler with its own 404 instead of being caught below and
+  // overwritten with a generic 500.
+  const expenseToDelete = await Expense.findOne({
+    userId: req.user._id,
+    _id: id,
+  });
+
+  if (!expenseToDelete) {
+    res.status(404);
+    throw new Error("Expense not found");
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const expenseToDelete = await Expense.findOne({
-      userId: req.user._id,
-      _id: id,
-    }).session(session);
-
-    if (!expenseToDelete) {
-      res.status(404);
-      throw new Error("Expense not found");
-    }
     // Update the user's totalExpenses
     await User.findOneAndUpdate(
       { _id: req.user._id },
@@ -134,7 +138,7 @@ const deleteUserExpense = asyncHandler(async (req, res, next) => {
 });
 
 const updateUserExpense = asyncHandler(async (req, res, next) => {
-  const { amount, category, description } = req.body;
+  const { amount, category, description, date } = req.body;
   const expenseId = req.params.id;
 
   if (!mongoose.Types.ObjectId.isValid(expenseId)) {
@@ -142,20 +146,23 @@ const updateUserExpense = asyncHandler(async (req, res, next) => {
     throw new Error("Invalid Expense Id!");
   }
 
+  // Checked before opening the transaction, so a "not found" throw reaches
+  // the error handler with its own 404 instead of being caught below and
+  // overwritten with a generic 500.
+  const existingExpense = await Expense.findOne({
+    _id: expenseId,
+    userId: req.user._id,
+  });
+
+  if (!existingExpense) {
+    res.status(404);
+    throw new Error("Expense not found!");
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const existingExpense = await Expense.findOne({
-      _id: expenseId,
-      userId: req.user._id,
-    }).session(session);
-
-    if (!existingExpense) {
-      res.status(404);
-      throw new Error("Expense not found!");
-    }
-
     const amountDifference =
       Number(amount) - Number(existingExpense.amount);
 
@@ -165,6 +172,7 @@ const updateUserExpense = asyncHandler(async (req, res, next) => {
         amount,
         category,
         description,
+        date,
       },
       { session }
     );

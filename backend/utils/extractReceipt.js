@@ -1,6 +1,8 @@
 const { ZodError } = require("zod");
 const { extractReceiptWithGemini } = require("./geminiClient");
 const { receiptExtractionSchema } = require("../schemas/receiptSchema");
+const { sleep } = require("./sleep");
+const { getRetryDelayMs } = require("./geminiRetryDelay");
 
 const MAX_ATTEMPTS = 2;
 
@@ -13,18 +15,21 @@ const MAX_ATTEMPTS = 2;
 // behavior.
 async function extractReceiptWithRetry(base64Image, mimeType) {
   let tokensUsed = 0;
+  let lastErrorStatus = null;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const { json, tokensUsed: used } = await extractReceiptWithGemini(base64Image, mimeType);
       tokensUsed += used ?? 0;
       const extracted = receiptExtractionSchema.parse(json);
-      return { extracted, tokensUsed };
+      return { extracted, tokensUsed, lastErrorStatus: null };
     } catch (error) {
+      lastErrorStatus = error.status ?? null;
       const reason = error instanceof ZodError ? "invalid shape" : error.message;
       console.error(`Receipt extraction attempt ${attempt}/${MAX_ATTEMPTS} failed: ${reason}`);
+      if (attempt < MAX_ATTEMPTS) await sleep(getRetryDelayMs(error, attempt));
     }
   }
-  return { extracted: null, tokensUsed };
+  return { extracted: null, tokensUsed, lastErrorStatus };
 }
 
 module.exports = { extractReceiptWithRetry };

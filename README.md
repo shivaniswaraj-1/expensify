@@ -171,7 +171,7 @@ Get a free API key at [aistudio.google.com/apikey](https://aistudio.google.com/a
 
 ```
 GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.8-flash
 ```
 
 One key powers all four AI features — receipt scanning, voice logging, "Ask your spending", and monthly insights. Without it, the rest of the app works fine — those features just fail with a "please fill it in" / "please try rephrasing" message instead of a result. Voice logging also needs a Chromium-based browser (Chrome, Edge) for the Web Speech API.

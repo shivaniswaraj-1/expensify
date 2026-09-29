@@ -4,6 +4,7 @@ const Expense = require("../models/expense");
 const { extractSpendingFilterWithRetry } = require("../utils/extractSpendingFilter");
 const { formatSpendingAnswer } = require("../utils/formatSpendingAnswer");
 const { logAiCall } = require("../utils/aiLogger");
+const { friendlyAiFailureMessage } = require("../utils/aiErrorMessage");
 
 // "Ask your spending": the LLM only ever converts a question into a small,
 // Zod-validated filter object. The actual numbers always come from a
@@ -14,7 +15,7 @@ const askSpending = asyncHandler(async (req, res) => {
   const todayIso = moment().format("YYYY-MM-DD");
 
   const startedAt = Date.now();
-  const { filter, tokensUsed } = await extractSpendingFilterWithRetry(question, todayIso);
+  const { filter, tokensUsed, lastErrorStatus } = await extractSpendingFilterWithRetry(question, todayIso);
   logAiCall({
     feature: "ask_spending",
     userId: req.user._id,
@@ -26,7 +27,7 @@ const askSpending = asyncHandler(async (req, res) => {
   if (!filter) {
     return res.status(200).json({
       success: false,
-      message: "Couldn't understand that question, please try rephrasing it.",
+      message: friendlyAiFailureMessage(lastErrorStatus, "Couldn't understand that question, please try rephrasing it."),
     });
   }
 

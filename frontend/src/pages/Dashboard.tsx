@@ -51,8 +51,10 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const currentPage = parseInt(searchParams.get("page") ?? "1");
   const [rows, setRows] = useState<number>(() => JSON.parse(localStorage.getItem("rows") ?? "10"));
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  // Seeded from ?search=... so arriving from the topbar search box shows
+  // results immediately instead of waiting for the debounce below to fire.
+  const [searchInput, setSearchInput] = useState(() => searchParams.get("search") ?? "");
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
   const [filterCat, setFilterCat] = useState("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const { register, handleSubmit, reset, setValue } = useForm();
@@ -129,15 +131,15 @@ const Dashboard = () => {
   const totalExpense = useMemo(() => allExpenses.reduce((s, e) => s + e.amount, 0), [allExpenses]);
   const thisMonth = useMemo(() => {
     const m = moment().format("YYYY-MM");
-    return allExpenses.filter((e) => moment(e.createdAt).format("YYYY-MM") === m).reduce((s, e) => s + e.amount, 0);
+    return allExpenses.filter((e) => moment(e.date ?? e.createdAt).format("YYYY-MM") === m).reduce((s, e) => s + e.amount, 0);
   }, [allExpenses]);
   const lastMonth = useMemo(() => {
     const m = moment().subtract(1, "month").format("YYYY-MM");
-    return allExpenses.filter((e) => moment(e.createdAt).format("YYYY-MM") === m).reduce((s, e) => s + e.amount, 0);
+    return allExpenses.filter((e) => moment(e.date ?? e.createdAt).format("YYYY-MM") === m).reduce((s, e) => s + e.amount, 0);
   }, [allExpenses]);
   const thisMonthCount = useMemo(() => {
     const m = moment().format("YYYY-MM");
-    return allExpenses.filter((e) => moment(e.createdAt).format("YYYY-MM") === m).length;
+    return allExpenses.filter((e) => moment(e.date ?? e.createdAt).format("YYYY-MM") === m).length;
   }, [allExpenses]);
   const highestCat = useMemo(() => {
     const map: Record<string, number> = {};
@@ -160,7 +162,7 @@ const Dashboard = () => {
   const trendData = useMemo(() => {
     const map: Record<string, number> = {};
     allExpenses.forEach((e) => {
-      const day = moment(e.createdAt).format("DD MMM");
+      const day = moment(e.date ?? e.createdAt).format("DD MMM");
       map[day] = (map[day] || 0) + e.amount;
     });
     return Object.entries(map)
@@ -178,6 +180,7 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["user-expenses"] });
       queryClient.invalidateQueries({ queryKey: ["all-expenses-stats"] });
       reset();
+      setValue("date", moment().format("YYYY-MM-DD"));
       setReceiptUrl(null);
       toast.success("Expense added successfully!");
     },
@@ -200,7 +203,7 @@ const Dashboard = () => {
     onSuccess: (res) => {
       const { success, extracted, receiptUrl: url, message } = res.data as {
         success: boolean;
-        extracted?: { amount: number; category: string; merchant: string };
+        extracted?: { amount: number; category: string; merchant: string; date?: string };
         receiptUrl: string | null;
         message?: string;
       };
@@ -212,6 +215,9 @@ const Dashboard = () => {
           setValue("category", extracted.category);
         }
         setValue("description", extracted.merchant);
+        if (extracted.date && moment(extracted.date).isValid()) {
+          setValue("date", moment(extracted.date).format("YYYY-MM-DD"));
+        }
         toast.success("Receipt scanned! Review the details below.");
       } else {
         toast.info(message || "Couldn't read this receipt, please fill it in.");
@@ -234,7 +240,7 @@ const Dashboard = () => {
     onSuccess: (res) => {
       const { success, extracted, message } = res.data as {
         success: boolean;
-        extracted?: { amount: number; category: string; note: string };
+        extracted?: { amount: number; category: string; note: string; date?: string };
         message?: string;
       };
 
@@ -244,6 +250,9 @@ const Dashboard = () => {
           setValue("category", extracted.category);
         }
         setValue("description", extracted.note);
+        if (extracted.date && moment(extracted.date).isValid()) {
+          setValue("date", moment(extracted.date).format("YYYY-MM-DD"));
+        }
         toast.success("Got it! Review the details below.");
       } else {
         toast.info(message || "Couldn't understand that, please fill it in.");
@@ -575,6 +584,17 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="mb-3">
+                <label className="form-label">Date</label>
+                <input
+                  className="form-control"
+                  type="date"
+                  required
+                  max={moment().format("YYYY-MM-DD")}
+                  defaultValue={moment().format("YYYY-MM-DD")}
+                  {...register("date")}
+                />
+              </div>
+              <div className="mb-3">
                 <label className="form-label">Description</label>
                 <input
                   className="form-control"
@@ -698,7 +718,7 @@ const Dashboard = () => {
                       {(currentPage - 1) * rows + i + 1}
                     </td>
                     <td style={{ whiteSpace: "nowrap", color: "var(--text-3)", fontSize: ".8rem" }}>
-                      {moment(exp.createdAt).format("DD MMM YYYY")}
+                      {moment(exp.date ?? exp.createdAt).format("DD MMM YYYY")}
                     </td>
                     <td>
                       <span

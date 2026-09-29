@@ -5,13 +5,15 @@ type OverlayType =
     | "RESET_PASSWORD_MODAL"
     | "DRAWER"
     | "DELETE_DIALOG"
-    | "EDIT_DIALOG";
+    | "EDIT_DIALOG"
+    | "NOTIFICATIONS_PANEL";
 
 export interface ExpensePayload {
     _id: string;
     amount: number;
     category: string;
     description: string;
+    date?: string;
 }
 
 interface OverlayStore {

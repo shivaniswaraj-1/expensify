@@ -12,13 +12,18 @@ async function callGemini({ contents, responseSchema, model }) {
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not configured");
   }
-  const chosenModel = model || process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const chosenModel = model || process.env.GEMINI_MODEL || "gemini-3.8-flash";
 
   const requestBody = {
     contents,
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema,
+      // These are short, well-specified extraction/classification prompts,
+      // not open-ended reasoning — LOW keeps latency/cost down. (Gemini 3.x
+      // "thinking" models default to MEDIUM, which is overkill here and, if
+      // left unfiltered below, can put a reasoning part ahead of the answer.)
+      thinkingConfig: { thinkingLevel: "LOW" },
     },
   };
 
@@ -33,11 +38,17 @@ async function callGemini({ contents, responseSchema, model }) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Gemini request failed (${response.status}): ${errorText}`);
+    const error = new Error(`Gemini request failed (${response.status}): ${errorText}`);
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  // Thinking-enabled models can return reasoning as its own part
+  // (part.thought === true) ahead of the actual answer, so parts[0] isn't
+  // reliably the answer — skip thought parts and take the first real one.
+  const parts = data?.candidates?.[0]?.content?.parts ?? [];
+  const text = parts.find((part) => !part.thought && part.text)?.text;
   if (!text) {
     throw new Error("Gemini returned no extractable content");
   }

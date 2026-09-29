@@ -200,3 +200,53 @@ describe("GET /api/expense", () => {
     expect(res.body.success).toBe(false);
   });
 });
+
+describe("PATCH /api/expense/:id", () => {
+  it("updates amount, category, description and date, and adjusts totalExpenses", async () => {
+    const { user, token } = await createUserAndToken();
+    const expense = await Expense.create({
+      amount: 100,
+      category: "Entertainment",
+      description: "Old description",
+      date: "2026-05-01",
+      userId: user._id,
+    });
+
+    const res = await request(app)
+      .patch(`/api/expense/${expense._id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        amount: 150,
+        category: "Groceries & Pet Supplies",
+        description: "Corrected description",
+        date: "2026-08-15",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const updated = await Expense.findById(expense._id);
+    expect(updated.amount).toBe(150);
+    expect(updated.category).toBe("Groceries & Pet Supplies");
+    expect(updated.description).toBe("Corrected description");
+    expect(updated.date.toISOString().slice(0, 10)).toBe("2026-08-15");
+  });
+
+  it("rejects updating another user's expense", async () => {
+    const { user } = await createUserAndToken();
+    const { token: otherToken } = await createUserAndToken({ email: "other@example.com" });
+    const expense = await Expense.create({
+      amount: 100,
+      category: "Entertainment",
+      description: "Mine",
+      userId: user._id,
+    });
+
+    const res = await request(app)
+      .patch(`/api/expense/${expense._id}`)
+      .set("Authorization", `Bearer ${otherToken}`)
+      .send({ amount: 999, category: "Entertainment", description: "Hijacked", date: "2026-01-01" });
+
+    expect(res.status).toBe(404);
+  });
+});

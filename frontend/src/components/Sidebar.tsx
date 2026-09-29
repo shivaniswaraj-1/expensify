@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { useLogout } from "@/hooks/useLogout";
+import useOverlayStore from "@/hooks/useOverlayStore";
 
 interface SidebarProps {
   show: boolean;
@@ -11,6 +12,7 @@ const Sidebar = ({ show, onClose }: SidebarProps) => {
   const user = useAuthStore((s) => s.user);
   const { logout } = useLogout();
   const navigate = useNavigate();
+  const { onOpen } = useOverlayStore();
 
   const handleLogout = () => {
     logout();
@@ -68,10 +70,13 @@ const Sidebar = ({ show, onClose }: SidebarProps) => {
           </NavLink>
 
           <div className="sidebar-section-label mt-2">Account</div>
-          <a href="#" className="nav-link" onClick={(e) => e.preventDefault()}>
+          <a
+            href="#"
+            className="nav-link"
+            onClick={(e) => { e.preventDefault(); onOpen("NOTIFICATIONS_PANEL"); onClose(); }}
+          >
             <i className="bi bi-bell-fill" />
             <span>Notifications</span>
-            <span className="nav-badge">2</span>
           </a>
           <a href="#" className="nav-link" onClick={(e) => e.preventDefault()}>
             <i className="bi bi-gear-fill" />

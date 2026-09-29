@@ -163,8 +163,7 @@ const Auth = () => {
                 <div className="text-end mb-3">
                   <button
                     type="button"
-                    className="btn btn-link btn-sm p-0"
-                    style={{ fontSize: ".8rem", color: "var(--primary)", textDecoration: "none" }}
+                    className="link-btn"
                     onClick={() => onOpen("RESET_PASSWORD_MODAL")}
                   >
                     Forgot password?
@@ -198,11 +197,7 @@ const Auth = () => {
 
             <div className="text-center mt-3" style={{ fontSize: ".8rem", color: "var(--text-3)" }}>
               {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button
-                className="btn btn-link btn-sm p-0"
-                style={{ fontSize: ".8rem", color: "var(--primary)", textDecoration: "none" }}
-                onClick={switchMode}
-              >
+              <button className="link-btn" onClick={switchMode}>
                 {isLogin ? "Sign up free" : "Sign in"}
               </button>
             </div>

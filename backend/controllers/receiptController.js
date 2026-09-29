@@ -2,13 +2,14 @@ const asyncHandler = require("express-async-handler");
 const { extractReceiptWithRetry } = require("../utils/extractReceipt");
 const { uploadImageToCloudinary } = require("../utils/upload");
 const { logAiCall } = require("../utils/aiLogger");
+const { friendlyAiFailureMessage } = require("../utils/aiErrorMessage");
 
 const scanReceipt = asyncHandler(async (req, res, next) => {
   const base64Image = req.file.buffer.toString("base64");
   const mimeType = req.file.mimetype;
 
   const startedAt = Date.now();
-  const { extracted, tokensUsed } = await extractReceiptWithRetry(base64Image, mimeType);
+  const { extracted, tokensUsed, lastErrorStatus } = await extractReceiptWithRetry(base64Image, mimeType);
   logAiCall({
     feature: "receipt_scan",
     userId: req.user._id,
@@ -32,7 +33,7 @@ const scanReceipt = asyncHandler(async (req, res, next) => {
   if (!extracted) {
     return res.status(200).json({
       success: false,
-      message: "Couldn't read this receipt, please fill it in.",
+      message: friendlyAiFailureMessage(lastErrorStatus, "Couldn't read this receipt, please fill it in."),
       receiptUrl,
     });
   }

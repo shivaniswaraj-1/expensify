@@ -154,11 +154,14 @@ const getReport = asyncHandler(async (req, res, next) => {
   };
 
   try {
-    const dateTrunc = { date: "$createdAt", unit };
+    // Bucketed by the expense's own date (when the purchase happened), not
+    // createdAt (when the record was saved), so editing/backdating an
+    // expense moves it in this report too.
+    const dateTrunc = { date: "$date", unit };
     if (unit === "week") dateTrunc.startOfWeek = "monday";
 
     const buckets = await Expense.aggregate([
-      { $match: { userId: req.user._id, createdAt: { $gte: startDate } } },
+      { $match: { userId: req.user._id, date: { $gte: startDate } } },
       { $group: { _id: { $dateTrunc: dateTrunc }, amount: { $sum: "$amount" } } },
       { $sort: { _id: 1 } },
     ]);
@@ -186,9 +189,9 @@ const downloadExpenses = asyncHandler(async (req, res, next) => {
     //Generate CSV file
     const array = [];
     data.forEach((element) => {
-      const { createdAt, description, category, amount } = element;
+      const { date, createdAt, description, category, amount } = element;
       array.push({
-        Date: moment(createdAt).format("MMMM DD, YYYY hh:mm:ss A"),
+        Date: moment(date || createdAt).format("MMMM DD, YYYY hh:mm:ss A"),
         Category: category,
         Description: description,
         Amount: amount,
